@@ -2,6 +2,111 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { weddingAudio } from './audio.js';
 
+// Real-world Device Orientation / Gyroscope Manager
+export class DeviceOrientationManager {
+  constructor(camera) {
+    this.camera = camera;
+    this.enabled = false;
+    this.deviceOrientation = {};
+    this.screenOrientation = 0;
+    
+    // Heading calibration
+    this.initialAlpha = null;
+    this.userYawOffset = 0;
+    this.hasReceivedOrientation = false;
+
+    // Quaternion math helpers
+    this.zee = new THREE.Vector3(0, 0, 1);
+    this.euler = new THREE.Euler();
+    this.q0 = new THREE.Quaternion();
+    this.q1 = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5)); // -PI/2 around x
+    this.deviceQuaternion = new THREE.Quaternion();
+  }
+
+  // Must be called from a user gesture for iOS 13+
+  async requestPermission() {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        const response = await DeviceOrientationEvent.requestPermission();
+        if (response === 'granted') {
+          this.startListening();
+          return true;
+        }
+      } catch (err) {
+        console.warn('iOS orientation permission error:', err);
+      }
+      return false;
+    } else if (typeof window !== 'undefined' && 'DeviceOrientationEvent' in window) {
+      this.startListening();
+      return true;
+    }
+    return false;
+  }
+
+  startListening() {
+    this.enabled = true;
+    this.onDeviceOrientation = this.onDeviceOrientation.bind(this);
+    this.onScreenOrientation = this.onScreenOrientation.bind(this);
+
+    window.addEventListener('deviceorientation', this.onDeviceOrientation, false);
+    window.addEventListener('orientationchange', this.onScreenOrientation, false);
+    this.onScreenOrientation();
+  }
+
+  stopListening() {
+    this.enabled = false;
+    window.removeEventListener('deviceorientation', this.onDeviceOrientation);
+    window.removeEventListener('orientationchange', this.onScreenOrientation);
+  }
+
+  onDeviceOrientation(e) {
+    if (e.alpha === null || e.beta === null || e.gamma === null) return;
+    this.hasReceivedOrientation = true;
+    this.deviceOrientation = {
+      alpha: e.alpha,
+      beta: e.beta,
+      gamma: e.gamma
+    };
+
+    if (this.initialAlpha === null) {
+      this.initialAlpha = e.alpha;
+    }
+  }
+
+  onScreenOrientation() {
+    this.screenOrientation = window.orientation || (window.screen && window.screen.orientation && window.screen.orientation.angle) || 0;
+  }
+
+  resetHeading() {
+    if (this.deviceOrientation.alpha !== undefined) {
+      this.initialAlpha = this.deviceOrientation.alpha;
+    }
+    this.userYawOffset = 0;
+  }
+
+  update() {
+    if (!this.enabled || !this.hasReceivedOrientation) return false;
+
+    const { alpha, beta, gamma } = this.deviceOrientation;
+    if (alpha === undefined) return false;
+
+    const relativeAlpha = alpha - (this.initialAlpha || 0);
+
+    const _alpha = THREE.MathUtils.degToRad(relativeAlpha) + this.userYawOffset;
+    const _beta = THREE.MathUtils.degToRad(beta);
+    const _gamma = THREE.MathUtils.degToRad(gamma);
+    const _orient = THREE.MathUtils.degToRad(this.screenOrientation);
+
+    this.euler.set(_beta, _alpha, -_gamma, 'YXZ');
+    this.deviceQuaternion.setFromEuler(this.euler);
+    this.deviceQuaternion.multiply(this.q1);
+    this.deviceQuaternion.multiply(this.q0.setFromAxisAngle(this.zee, -_orient));
+
+    this.camera.quaternion.copy(this.deviceQuaternion);
+    return true;
+  }
+}
+
 export class WeddingARScene {
   constructor(canvasElement, videoElement) {
     this.canvas = canvasElement;
@@ -11,6 +116,7 @@ export class WeddingARScene {
     this.camera = null;
     this.renderer = null;
     this.controls = null;
+    this.gyroManager = null;
     
     // Group holding all table 3D objects
     this.arAnchor = null;
@@ -32,15 +138,12 @@ export class WeddingARScene {
     this.targetBloom = 1.0;
     this.clock = new THREE.Clock();
     this.isCameraActive = false;
-    this.isVirtualTableVisible = false;
-    this.isReticleVisible = true;
-    this.isTableLocked = false;
     
-    // Gyroscope tracking
-    this.requestGyroPermission = null;
-    
-    // Interaction states
-    this.currentScale = 1.0;
+    // Fallback swipe tracking for desktop / non-gyro devices
+    this.manualYaw = 0;
+    this.manualPitch = 0;
+    this.isDragging = false;
+    this.lastPointer = { x: 0, y: 0 };
     
     // Scene mode toggles
     this.mode = 'all'; // 'all', 'flowers', 'rings', 'butterflies'
@@ -65,7 +168,7 @@ export class WeddingARScene {
       canvas: this.canvas,
       alpha: true,
       antialias: true,
-      preserveDrawingBuffer: true // crucial for taking AR photo snapshots!
+      preserveDrawingBuffer: true
     });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -74,26 +177,29 @@ export class WeddingARScene {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    // 4. OrbitControls for 360-degree rotation and zoom
+    // 4. OrbitControls (Active in Virtual 3D mode)
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
     this.controls.minDistance = 0.6;
     this.controls.maxDistance = 5.0;
-    this.controls.maxPolarAngle = Math.PI / 2.05; // Keep camera above table surface
+    this.controls.maxPolarAngle = Math.PI / 2.05;
     this.controls.target.set(0, 0.25, 0);
     this.controls.autoRotate = false;
     this.controls.autoRotateSpeed = 1.4;
 
-    // 5. Lighting
+    // 5. Gyroscope Orientation Manager (Active in Camera AR mode)
+    this.gyroManager = new DeviceOrientationManager(this.camera);
+
+    // 6. Lighting
     this.setupLighting();
 
-    // 6. Main AR Anchor Group (holds the rings, flowers, butterflies)
+    // 7. Main AR Anchor Group (holds the rings, flowers, butterflies)
     this.arAnchor = new THREE.Group();
     this.arAnchor.position.set(0, 0, 0);
     this.scene.add(this.arAnchor);
 
-    // 7. Build 3D Elements
+    // 8. Build 3D Elements
     this.buildSurfaceReticle();
     this.buildVirtualBanquetTable();
     this.buildEnchantedFlowerCenterpiece();
@@ -101,22 +207,19 @@ export class WeddingARScene {
     this.buildButterflies();
     this.buildFallingPetalsAndStardust();
 
-    // 8. Event Listeners & Sensors
+    // 9. Event Listeners & Gestures
     window.addEventListener('resize', () => this.onWindowResize());
     this.setupGestures();
-    this.setupDeviceOrientation();
 
-    // 9. Start Loop
+    // 10. Start Animation Loop
     this.animate = this.animate.bind(this);
     requestAnimationFrame(this.animate);
   }
 
   setupLighting() {
-    // Warm romantic ambient light
     const ambientLight = new THREE.AmbientLight(0xfff3e0, 1.2);
     this.scene.add(ambientLight);
 
-    // Golden spotlight simulating elegant chandelier / banquet spotlight
     const spotLight = new THREE.SpotLight(0xfff1cf, 3.5);
     spotLight.position.set(1.5, 4.0, 2.0);
     spotLight.angle = Math.PI / 4;
@@ -129,12 +232,10 @@ export class WeddingARScene {
     spotLight.shadow.bias = -0.001;
     this.scene.add(spotLight);
 
-    // Soft rose gold rim light from behind
     const rimLight = new THREE.DirectionalLight(0xffb7b2, 1.4);
     rimLight.position.set(-2, 2.5, -2);
     this.scene.add(rimLight);
 
-    // Candlelight point light hovering near centerpiece
     this.candleLight = new THREE.PointLight(0xff9933, 2.0, 4, 1.5);
     this.candleLight.position.set(0, 0.4, 0);
     this.scene.add(this.candleLight);
@@ -153,7 +254,6 @@ export class WeddingARScene {
     this.reticle.rotation.x = -Math.PI / 2;
     this.reticle.position.y = 0.005;
 
-    // Inner dashed accent
     const innerRingGeo = new THREE.RingGeometry(0.2, 0.22, 32);
     const innerRingMat = new THREE.MeshBasicMaterial({
       color: 0xffe6a3,
@@ -164,17 +264,16 @@ export class WeddingARScene {
     const innerMesh = new THREE.Mesh(innerRingGeo, innerRingMat);
     this.reticle.add(innerMesh);
 
-    this.scene.add(this.reticle);
+    this.arAnchor.add(this.reticle);
   }
 
   // Photorealistic virtual banquet table
   buildVirtualBanquetTable() {
     this.virtualTable = new THREE.Group();
 
-    // Tabletop - Luxurious Ivory/Champagne Silk Tablecloth with soft sheen
     const tableTopGeo = new THREE.CylinderGeometry(1.6, 1.6, 0.08, 64);
     const tableTopMat = new THREE.MeshStandardMaterial({
-      color: 0x18241d, // Deep Emerald & Velvet Navy wedding banquet theme
+      color: 0x18241d,
       roughness: 0.4,
       metalness: 0.1
     });
@@ -183,7 +282,6 @@ export class WeddingARScene {
     tableMesh.receiveShadow = true;
     this.virtualTable.add(tableMesh);
 
-    // Golden embossed table rim
     const tableRimGeo = new THREE.TorusGeometry(1.6, 0.02, 16, 64);
     const goldRimMat = new THREE.MeshStandardMaterial({
       color: 0xd4af37,
@@ -195,7 +293,6 @@ export class WeddingARScene {
     rimMesh.position.y = 0.002;
     this.virtualTable.add(rimMesh);
 
-    // Centerpiece Mirror Charger Plate
     const plateGeo = new THREE.CylinderGeometry(0.65, 0.65, 0.015, 48);
     const plateMat = new THREE.MeshStandardMaterial({
       color: 0xd4af37,
@@ -207,7 +304,6 @@ export class WeddingARScene {
     plate.receiveShadow = true;
     this.virtualTable.add(plate);
 
-    // 4 Floating Candle Holders around centerpiece
     for (let i = 0; i < 4; i++) {
       const angle = (i * Math.PI) / 2 + Math.PI / 4;
       const candleHolder = new THREE.Group();
@@ -225,7 +321,6 @@ export class WeddingARScene {
       const glass = new THREE.Mesh(glassGeo, glassMat);
       candleHolder.add(glass);
 
-      // Candle Flame Glow
       const flameGeo = new THREE.SphereGeometry(0.012, 16, 16);
       const flameMat = new THREE.MeshBasicMaterial({ color: 0xffcc33 });
       const flame = new THREE.Mesh(flameGeo, flameMat);
@@ -244,7 +339,6 @@ export class WeddingARScene {
     this.flowerGroup = new THREE.Group();
     this.flowerGroup.position.set(0, 0.02, 0);
 
-    // Elegant Gold / Marble Pedestal Vase
     const vaseGeo = new THREE.CylinderGeometry(0.18, 0.12, 0.18, 32);
     const vaseMat = new THREE.MeshStandardMaterial({
       color: 0x111111,
@@ -256,7 +350,6 @@ export class WeddingARScene {
     vase.castShadow = true;
     this.flowerGroup.add(vase);
 
-    // Gold Trim on Vase
     const vaseRingGeo = new THREE.TorusGeometry(0.182, 0.012, 16, 32);
     const goldMat = new THREE.MeshStandardMaterial({
       color: 0xd4af37,
@@ -268,7 +361,6 @@ export class WeddingARScene {
     vaseRing.position.y = 0.17;
     this.flowerGroup.add(vaseRing);
 
-    // Lush Emerald Foliage / Leaves Base
     const leafGeo = new THREE.ConeGeometry(0.06, 0.22, 5);
     leafGeo.rotateX(Math.PI / 2);
     const leafMat = new THREE.MeshStandardMaterial({
@@ -285,17 +377,16 @@ export class WeddingARScene {
       this.flowerGroup.add(leaf);
     }
 
-    // Procedural Blooming Petals
     this.petals = [];
     const petalsPerLayer = [4, 6, 8, 10, 12];
 
     const innerPetalMat = new THREE.MeshStandardMaterial({
-      color: 0xc41e3a, // Crimson Velvet
+      color: 0xc41e3a,
       roughness: 0.5,
       metalness: 0.1
     });
     const outerPetalMat = new THREE.MeshStandardMaterial({
-      color: 0xd6336c, // Radiant Rose
+      color: 0xd6336c,
       roughness: 0.45,
       metalness: 0.15
     });
@@ -343,7 +434,6 @@ export class WeddingARScene {
       }
     });
 
-    // Golden Stamens inside flower center
     const stamenCoreGeo = new THREE.SphereGeometry(0.035, 16, 16);
     const stamenCoreMat = new THREE.MeshStandardMaterial({
       color: 0xffd700,
@@ -362,10 +452,9 @@ export class WeddingARScene {
     this.ringGroup = new THREE.Group();
     this.ringGroup.position.set(0, 0.48, 0);
 
-    // 1. Groom's Ring - Classic Wide Champagne Gold Band
     const groomRingGeo = new THREE.TorusGeometry(0.12, 0.018, 32, 64);
     const goldBandMat = new THREE.MeshStandardMaterial({
-      color: 0xffd27d, // Champagne Gold
+      color: 0xffd27d,
       metalness: 0.95,
       roughness: 0.12
     });
@@ -375,10 +464,9 @@ export class WeddingARScene {
     groomRing.castShadow = true;
     this.ringGroup.add(groomRing);
 
-    // 2. Bride's Ring - Platinum Solitaire Ring with Diamond
     const brideRingGeo = new THREE.TorusGeometry(0.105, 0.014, 32, 64);
     const platinumBandMat = new THREE.MeshStandardMaterial({
-      color: 0xf5f5f5, // Pure Platinum
+      color: 0xf5f5f5,
       metalness: 0.98,
       roughness: 0.08
     });
@@ -388,13 +476,11 @@ export class WeddingARScene {
     brideRing.position.set(0.045, 0.03, 0);
     brideRing.castShadow = true;
 
-    // Diamond Crown Mount
     const crownGeo = new THREE.CylinderGeometry(0.026, 0.016, 0.024, 6);
     const crown = new THREE.Mesh(crownGeo, platinumBandMat);
     crown.position.set(0, 0.11, 0);
     brideRing.add(crown);
 
-    // Solitaire Diamond
     const diamondGeo = new THREE.OctahedronGeometry(0.035, 1);
     const diamondMat = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
@@ -412,7 +498,6 @@ export class WeddingARScene {
     this.diamond.scale.set(1, 1.4, 1);
     brideRing.add(this.diamond);
 
-    // Diamond Lens Flare / Sparkle Starburst
     const glintCanvas = document.createElement('canvas');
     glintCanvas.width = 64;
     glintCanvas.height = 64;
@@ -604,84 +689,106 @@ export class WeddingARScene {
     this.arAnchor.add(this.particleSystem);
   }
 
-  // Device Gyroscope Parallax
-  setupDeviceOrientation() {
-    const handleOrientation = (e) => {
-      if (!this.isCameraActive) return;
-      if (e.beta !== null && e.gamma !== null) {
-        const pitch = (e.beta - 45) * (Math.PI / 180) * 0.1;
-        const roll = e.gamma * (Math.PI / 180) * 0.1;
-        this.arAnchor.rotation.x = pitch;
-        this.arAnchor.rotation.z = -roll;
-      }
-    };
-
-    if (typeof window !== 'undefined' && window.DeviceOrientationEvent) {
-      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        this.requestGyroPermission = async () => {
-          try {
-            const resp = await DeviceOrientationEvent.requestPermission();
-            if (resp === 'granted') {
-              window.addEventListener('deviceorientation', handleOrientation);
-            }
-          } catch (e) {
-            console.log('Gyro permission notice:', e);
-          }
-        };
-      } else {
-        window.addEventListener('deviceorientation', handleOrientation);
-      }
-    }
-  }
-
-  // Tap Detection on Canvas (Differentiates Tap from 360° Drag)
+  // Gestures for Canvas Tap & Camera Pan in AR mode
   setupGestures() {
     let pointerStartX = 0;
     let pointerStartY = 0;
     let pointerStartTime = 0;
 
     const onPointerDown = (e) => {
+      this.isDragging = true;
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       pointerStartX = clientX;
       pointerStartY = clientY;
       pointerStartTime = Date.now();
+      this.lastPointer = { x: clientX, y: clientY };
+    };
+
+    const onPointerMove = (e) => {
+      if (!this.isDragging) return;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+      if (this.isCameraActive) {
+        const deltaX = clientX - this.lastPointer.x;
+        const deltaY = clientY - this.lastPointer.y;
+        
+        // Horizontal swipe in AR mode adjusts the view rotation around the fixed table anchor
+        this.gyroManager.userYawOffset += deltaX * 0.005;
+        this.manualPitch = Math.max(-0.6, Math.min(0.6, this.manualPitch + deltaY * 0.003));
+      }
+
+      this.lastPointer = { x: clientX, y: clientY };
     };
 
     const onPointerUp = (e) => {
+      this.isDragging = false;
       const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
       const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
       const dist = Math.hypot(clientX - pointerStartX, clientY - pointerStartY);
       const time = Date.now() - pointerStartTime;
 
-      // If moved less than 8px and within 300ms, it is a TAP!
       if (dist < 8 && time < 300) {
-        this.onTapCanvas();
+        this.triggerMagicBurst();
       }
     };
 
     this.canvas.addEventListener('mousedown', onPointerDown);
-    this.canvas.addEventListener('mouseup', onPointerUp);
+    window.addEventListener('mousemove', onPointerMove);
+    window.addEventListener('mouseup', onPointerUp);
 
     this.canvas.addEventListener('touchstart', onPointerDown, { passive: true });
-    this.canvas.addEventListener('touchend', onPointerUp, { passive: true });
+    window.addEventListener('touchmove', onPointerMove, { passive: true });
+    window.addEventListener('touchend', onPointerUp);
   }
 
-  onTapCanvas() {
-    // Tap always triggers magic bloom & butterfly flourish
-    this.triggerMagicBurst();
+  // Set Mode: Camera AR vs Virtual 3D Table
+  setCameraARMode(active) {
+    this.isCameraActive = active;
+
+    if (active) {
+      // In Camera AR mode:
+      // The camera is at (0, 0, 0) tracking the real phone orientation.
+      // The 3D rings and flowers are solidly anchored in front on the table at (0, -0.65, -1.15).
+      this.virtualTable.visible = false;
+      this.controls.enabled = false;
+      this.camera.position.set(0, 0, 0);
+      this.camera.quaternion.identity();
+      this.arAnchor.position.set(0, -0.65, -1.15);
+      this.gyroManager.resetHeading();
+    } else {
+      // In Virtual 3D mode:
+      // OrbitControls allows full 360° mouse / swipe around the virtual banquet table.
+      this.virtualTable.visible = true;
+      this.controls.enabled = true;
+      this.camera.position.set(0, 1.6, 2.5);
+      this.camera.lookAt(0, 0.25, 0);
+      this.arAnchor.position.set(0, 0, 0);
+      this.controls.target.set(0, 0.25, 0);
+    }
+  }
+
+  // Re-center Anchor directly in front of current phone orientation
+  recenterAnchor() {
+    this.gyroManager.resetHeading();
+    this.manualPitch = 0;
+    weddingAudio.playRingShimmer();
   }
 
   // Toggle Auto 360-degree rotation
   toggleAutoRotate() {
-    if (this.controls) {
+    if (this.controls && !this.isCameraActive) {
       this.controls.autoRotate = !this.controls.autoRotate;
       return this.controls.autoRotate;
+    } else if (this.isCameraActive) {
+      this.isAutoSpinningAR = !this.isAutoSpinningAR;
+      return this.isAutoSpinningAR;
     }
     return false;
   }
 
-  // Dramatic Opening Ceremony Animation when entering or locking position
+  // Opening Animation when camera starts
   playOpeningAnimation() {
     this.bloomProgress = 0;
     this.targetBloom = 1.0;
@@ -697,14 +804,13 @@ export class WeddingARScene {
         const elapsed = now - startTime;
         const progress = Math.min(elapsed / duration, 1.0);
 
-        // Back-out easing for majestic bounce landing
         const s = 1.70158;
         const t = progress - 1;
         const ease = t * t * ((s + 1) * t + s) + 1;
 
         const curScale = Math.max(0.01, ease);
         this.ringGroup.scale.set(curScale, curScale, curScale);
-        this.ringGroup.position.y = 1.1 - ease * 0.62; // settles at ~0.48
+        this.ringGroup.position.y = 1.1 - ease * 0.62;
 
         if (progress < 1.0) {
           requestAnimationFrame(animateDrop);
@@ -757,24 +863,12 @@ export class WeddingARScene {
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       this.video.srcObject = stream;
       await this.video.play();
-      this.isCameraActive = true;
-
-      if (this.virtualTable) {
-        this.virtualTable.visible = false;
-      }
-      this.reticle.visible = true;
-
-      if (this.requestGyroPermission) {
-        this.requestGyroPermission();
-      }
-
+      
+      this.setCameraARMode(true);
       return true;
     } catch (err) {
       console.warn('Camera access denied or unavailable, keeping virtual table mode.', err);
-      this.isCameraActive = false;
-      if (this.virtualTable) {
-        this.virtualTable.visible = true;
-      }
+      this.setCameraARMode(false);
       return false;
     }
   }
@@ -785,13 +879,9 @@ export class WeddingARScene {
       tracks.forEach(track => track.stop());
       this.video.srcObject = null;
     }
-    this.isCameraActive = false;
-    if (this.virtualTable) {
-      this.virtualTable.visible = true;
-    }
+    this.setCameraARMode(false);
   }
 
-  // Switch between Experience Filter Modes
   setMode(mode) {
     this.mode = mode;
     if (mode === 'all') {
@@ -813,14 +903,12 @@ export class WeddingARScene {
     }
   }
 
-  // Trigger Bloom Animation Replay
   triggerBloom() {
     this.bloomProgress = 0;
     this.targetBloom = 1.0;
     weddingAudio.playBloomSfx();
   }
 
-  // Capture High-Res Snapshot with Wedding Polaroid Frame
   captureSnapshot(coupleName = "Arif & Haziqah", tableInfo = "Meja 07 • Kasih Abadi") {
     const snapshotCanvas = document.createElement('canvas');
     const width = this.canvas.width;
@@ -901,9 +989,22 @@ export class WeddingARScene {
     const delta = this.clock.getDelta();
     const time = this.clock.getElapsedTime();
 
-    // 0. Update 360-degree OrbitControls
-    if (this.controls) {
-      this.controls.update();
+    // 0. Update Camera Orientation
+    if (this.isCameraActive) {
+      if (this.isAutoSpinningAR) {
+        this.gyroManager.userYawOffset += delta * 0.8;
+      }
+
+      const hasGyro = this.gyroManager.update();
+      if (!hasGyro) {
+        // Fallback for desktop camera without gyro: use manual swipe yaw/pitch
+        const euler = new THREE.Euler(this.manualPitch, this.gyroManager.userYawOffset, 0, 'YXZ');
+        this.camera.quaternion.setFromEuler(euler);
+      }
+    } else {
+      if (this.controls) {
+        this.controls.update();
+      }
     }
 
     // 1. Smooth Petal Blooming Morph Animation

@@ -110,10 +110,14 @@ async function setView(viewName) {
   }
 }
 
+const btnRecenterAnchor = document.getElementById('btn-recenter-anchor');
+
 // -----------------------------------------------------------------------------
 // 3. Welcome Entry Modal Actions
 // -----------------------------------------------------------------------------
 btnStartCameraExperience?.addEventListener('click', async () => {
+  // Request iOS Gyroscope permission directly within user touch event!
+  await arScene.gyroManager.requestPermission();
   welcomeModal?.classList.add('hidden');
   await setView('ar-camera');
   arScene.playOpeningAnimation();
@@ -128,11 +132,16 @@ btnStart3dExperience?.addEventListener('click', () => {
 });
 
 // -----------------------------------------------------------------------------
-// 4. 360-Degree Controls
+// 4. 360-Degree Controls & Position Re-center
 // -----------------------------------------------------------------------------
 btnToggleRotate?.addEventListener('click', () => {
   const isRotating = arScene.toggleAutoRotate();
   btnToggleRotate.classList.toggle('active', isRotating);
+});
+
+btnRecenterAnchor?.addEventListener('click', () => {
+  arScene.recenterAnchor();
+  guidanceText.textContent = '🎯 Kedudukan cincin & bunga ditetapkan semula tepat di hadapan anda!';
 });
 
 // -----------------------------------------------------------------------------
@@ -274,7 +283,10 @@ formNewWish?.addEventListener('submit', (e) => {
 // -----------------------------------------------------------------------------
 // 9. Navigation & Mode Switch Events
 // -----------------------------------------------------------------------------
-tabBtnCamera?.addEventListener('click', () => setView('ar-camera'));
+tabBtnCamera?.addEventListener('click', async () => {
+  await arScene.gyroManager.requestPermission();
+  setView('ar-camera');
+});
 tabBtnVirtual?.addEventListener('click', () => setView('virtual-3d'));
 tabBtnCard?.addEventListener('click', () => setView('table-card'));
 btnToggleGenerator?.addEventListener('click', () => setView('table-card'));
