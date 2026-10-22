@@ -57,33 +57,10 @@ const snapshotPreviewImg = document.getElementById('snapshot-preview-img');
 const btnDownloadSnap = document.getElementById('btn-download-snap');
 const btnShareSnap = document.getElementById('btn-share-snap');
 
-const qrScannerOverlay = document.getElementById('qr-scanner-overlay');
-const scannerBox = document.getElementById('scanner-box');
-const scannerBadgeText = document.getElementById('scanner-badge-text');
-const scannerDot = document.getElementById('scanner-dot');
-let qrFeedbackTimeout = null;
-
 // Instantiate Core Engines
 const arScene = new WeddingARScene(canvas, video);
 const cardGen = new TableCardGenerator('generator-mount-point');
 const wishingWall = new WishingWall();
-
-// Real-Time QR Lock Event
-arScene.onQrDetected = (info) => {
-  if (info.firstLock) {
-    if (scannerBox) scannerBox.classList.add('locked');
-    if (scannerDot) scannerDot.classList.add('locked');
-    if (scannerBadgeText) scannerBadgeText.textContent = '✨ Kod QR Dikesan! Cincin Terkunci di Meja';
-    if (guidanceText) {
-      guidanceText.textContent = '✨ Cincin 3D telah diletakkan tepat pada kod QR! Pusingkan telefon 360° mengelilingi meja.';
-    }
-
-    clearTimeout(qrFeedbackTimeout);
-    qrFeedbackTimeout = setTimeout(() => {
-      if (qrScannerOverlay) qrScannerOverlay.classList.add('fade-out');
-    }, 1200);
-  }
-};
 
 // -----------------------------------------------------------------------------
 // 1. Initialize Wedding Info from URL / Defaults
@@ -112,22 +89,12 @@ async function setView(viewName) {
 
     const success = await arScene.startCamera();
     if (success) {
-      if (!arScene.hasLockedQR) {
-        qrScannerOverlay?.classList.remove('hidden', 'fade-out');
-        scannerBox?.classList.remove('locked');
-        scannerDot?.classList.remove('locked');
-        if (scannerBadgeText) scannerBadgeText.textContent = 'Halakan ke Kod QR di atas kad meja...';
-        guidanceText.textContent = '📷 Halakan kamera ke Kod QR kad meja untuk meletakkan cincin tepat di atas meja!';
-      } else {
-        guidanceText.textContent = '✨ Cincin 3D kekal di atas meja • Pusingkan telefon 360° untuk melihat dari setiap sudut!';
-      }
+      guidanceText.textContent = '✨ Cincin & Bunga terletak tetap di atas meja anda • Pusingkan telefon atau seret 360° untuk melihat setiap sudut!';
     } else {
-      qrScannerOverlay?.classList.add('hidden');
       guidanceText.textContent = 'Mod Simulasi Meja 3D (Kamera tidak dapat diakses) • Seret 360° untuk putar!';
       arScene.virtualTable.visible = true;
     }
   } else if (viewName === 'virtual-3d') {
-    qrScannerOverlay?.classList.add('hidden');
     tabBtnVirtual?.classList.add('active');
     cardGeneratorScreen?.classList.add('hidden');
     bottomHud?.classList.remove('hidden');
@@ -136,7 +103,6 @@ async function setView(viewName) {
     arScene.virtualTable.visible = true;
     guidanceText.textContent = '🥂 Meja Jamuan 3D • Seret untuk putar 360°, cubit untuk zum cincin!';
   } else if (viewName === 'table-card') {
-    qrScannerOverlay?.classList.add('hidden');
     tabBtnCard?.classList.add('active');
     cardGeneratorScreen?.classList.remove('hidden');
     bottomHud?.classList.add('hidden');
@@ -154,6 +120,7 @@ btnStartCameraExperience?.addEventListener('click', async () => {
   await arScene.gyroManager.requestPermission();
   welcomeModal?.classList.add('hidden');
   await setView('ar-camera');
+  arScene.playOpeningAnimation();
   weddingAudio.init();
 });
 
@@ -174,11 +141,7 @@ btnToggleRotate?.addEventListener('click', () => {
 
 btnRecenterAnchor?.addEventListener('click', () => {
   arScene.recenterAnchor();
-  qrScannerOverlay?.classList.remove('hidden', 'fade-out');
-  scannerBox?.classList.remove('locked');
-  scannerDot?.classList.remove('locked');
-  if (scannerBadgeText) scannerBadgeText.textContent = 'Halakan ke Kod QR di atas kad meja...';
-  guidanceText.textContent = '🎯 Halakan semula ke kod QR untuk menetapkan kedudukan cincin pada meja!';
+  guidanceText.textContent = '🎯 Kedudukan cincin & bunga ditetapkan semula tepat di hadapan anda!';
 });
 
 // -----------------------------------------------------------------------------
