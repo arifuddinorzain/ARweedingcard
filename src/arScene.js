@@ -148,6 +148,10 @@ export class WeddingARScene {
     // Scene mode toggles
     this.mode = 'all'; // 'all', 'flowers', 'rings', 'butterflies'
 
+    // Real Table Surface Calibration & Anchoring
+    this.tableHeight = -0.62;
+    this.hasCalibratedTable = false;
+
     this.initScene();
   }
 
@@ -241,14 +245,41 @@ export class WeddingARScene {
     this.scene.add(this.candleLight);
   }
 
-  // Golden circular AR placement reticle on table
+  // Golden circular AR placement reticle & contact shadow on table
   buildSurfaceReticle() {
+    // 1. Realistic soft contact shadow on real table surface
+    const shadowCanvas = document.createElement('canvas');
+    shadowCanvas.width = 128;
+    shadowCanvas.height = 128;
+    const sCtx = shadowCanvas.getContext('2d');
+    const grad = sCtx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    grad.addColorStop(0, 'rgba(0, 0, 0, 0.75)');
+    grad.addColorStop(0.3, 'rgba(0, 0, 0, 0.4)');
+    grad.addColorStop(0.65, 'rgba(0, 0, 0, 0.08)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    sCtx.fillStyle = grad;
+    sCtx.fillRect(0, 0, 128, 128);
+
+    const shadowTex = new THREE.CanvasTexture(shadowCanvas);
+    const shadowGeo = new THREE.PlaneGeometry(1.25, 1.25);
+    const shadowMat = new THREE.MeshBasicMaterial({
+      map: shadowTex,
+      transparent: true,
+      opacity: 0.85,
+      depthWrite: false
+    });
+    this.contactShadow = new THREE.Mesh(shadowGeo, shadowMat);
+    this.contactShadow.rotation.x = -Math.PI / 2;
+    this.contactShadow.position.y = 0.001;
+    this.arAnchor.add(this.contactShadow);
+
+    // 2. Elegant Royal Gold Table Ring Reticle
     const ringGeo = new THREE.RingGeometry(0.35, 0.38, 48);
     const ringMat = new THREE.MeshBasicMaterial({
       color: 0xd4af37,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.8
+      opacity: 0.85
     });
     this.reticle = new THREE.Mesh(ringGeo, ringMat);
     this.reticle.rotation.x = -Math.PI / 2;
@@ -259,7 +290,7 @@ export class WeddingARScene {
       color: 0xffe6a3,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.5
+      opacity: 0.55
     });
     const innerMesh = new THREE.Mesh(innerRingGeo, innerRingMat);
     this.reticle.add(innerMesh);
@@ -450,7 +481,7 @@ export class WeddingARScene {
   // 3D Interlinked Champagne Gold & Platinum Diamond Wedding Rings
   buildTwinWeddingRings() {
     this.ringGroup = new THREE.Group();
-    this.ringGroup.position.set(0, 0.48, 0);
+    this.ringGroup.position.set(0, 0.34, 0);
 
     const groomRingGeo = new THREE.TorusGeometry(0.12, 0.018, 32, 64);
     const goldBandMat = new THREE.MeshStandardMaterial({
@@ -744,6 +775,9 @@ export class WeddingARScene {
       const time = Date.now() - pointerStartTime;
 
       if (dist < 8 && time < 300) {
+        if (this.isCameraActive) {
+          this.placeAnchorOnTablePlane(clientX, clientY);
+        }
         this.triggerMagicBurst();
       }
     };
@@ -764,12 +798,13 @@ export class WeddingARScene {
     if (active) {
       // In Camera AR mode:
       // The camera is at (0, 0, 0) tracking the real phone orientation.
-      // The 3D rings and flowers are anchored naturally on the table (further away & lower down)
+      // The 3D rings and flowers are anchored naturally on the table plane
       this.virtualTable.visible = false;
       this.controls.enabled = false;
       this.camera.position.set(0, 0, 0);
       this.camera.quaternion.identity();
-      this.arAnchor.position.set(0, -0.95, -1.8);
+      this.hasCalibratedTable = false; // Will auto-calibrate to exact phone tilt
+      this.placeAnchorOnTablePlane();
       this.gyroManager.resetHeading();
     } else {
       // In Virtual 3D mode:
@@ -783,11 +818,37 @@ export class WeddingARScene {
     }
   }
 
-  // Re-center Anchor directly in front of current phone orientation
+  // Place Anchor on the Physical Horizontal Table Plane (Y = tableHeight)
+  placeAnchorOnTablePlane(screenX = null, screenY = null) {
+    let rayDir;
+    if (screenX !== null && screenY !== null) {
+      const ndcX = (screenX / window.innerWidth) * 2 - 1;
+      const ndcY = -(screenY / window.innerHeight) * 2 + 1;
+      const rayTarget = new THREE.Vector3(ndcX, ndcY, 0.5);
+      rayTarget.unproject(this.camera);
+      rayDir = rayTarget.sub(this.camera.position).normalize();
+    } else {
+      rayDir = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion).normalize();
+    }
+
+    // When phone is looking down at table (rayDir.y < -0.12):
+    if (rayDir.y < -0.12) {
+      // Intersect with horizontal table plane Y = this.tableHeight
+      const t = this.tableHeight / rayDir.y;
+      const dist = THREE.MathUtils.clamp(t, 0.5, 2.0);
+      this.arAnchor.position.set(rayDir.x * dist, this.tableHeight, rayDir.z * dist);
+    } else {
+      // When phone is held horizontally or looking up, place forward on the table plane
+      const forwardLen = Math.hypot(rayDir.x, rayDir.z) || 1;
+      this.arAnchor.position.set((rayDir.x / forwardLen) * 0.95, this.tableHeight, (rayDir.z / forwardLen) * 0.95);
+    }
+  }
+
+  // Re-center Anchor directly in front of current phone orientation on the table
   recenterAnchor() {
     this.gyroManager.resetHeading();
     this.manualPitch = 0;
-    this.arAnchor.position.set(0, -0.95, -1.8);
+    this.placeAnchorOnTablePlane();
     weddingAudio.playRingShimmer();
   }
 
@@ -810,7 +871,7 @@ export class WeddingARScene {
 
     if (this.ringGroup) {
       this.ringGroup.scale.set(0.01, 0.01, 0.01);
-      this.ringGroup.position.y = 1.1;
+      this.ringGroup.position.y = 0.75;
 
       const startTime = performance.now();
       const duration = 1200;
@@ -825,12 +886,12 @@ export class WeddingARScene {
 
         const curScale = Math.max(0.01, ease);
         this.ringGroup.scale.set(curScale, curScale, curScale);
-        this.ringGroup.position.y = 1.1 - ease * 0.62;
+        this.ringGroup.position.y = 0.75 - ease * 0.41;
 
         if (progress < 1.0) {
           requestAnimationFrame(animateDrop);
         } else {
-          this.ringGroup.position.y = 0.48;
+          this.ringGroup.position.y = 0.34;
           this.ringGroup.scale.set(1, 1, 1);
         }
       };
@@ -852,9 +913,9 @@ export class WeddingARScene {
     }, 1200);
 
     if (this.ringGroup) {
-      this.ringGroup.position.y += 0.08;
+      this.ringGroup.position.y += 0.05;
       setTimeout(() => {
-        if (this.ringGroup) this.ringGroup.position.y = 0.48;
+        if (this.ringGroup) this.ringGroup.position.y = 0.34;
       }, 500);
     }
   }
@@ -1011,7 +1072,13 @@ export class WeddingARScene {
       }
 
       const hasGyro = this.gyroManager.update();
-      if (!hasGyro) {
+      if (hasGyro) {
+        // Auto-calibrate table anchor on first genuine tilt angle reading
+        if (!this.hasCalibratedTable) {
+          this.hasCalibratedTable = true;
+          this.placeAnchorOnTablePlane();
+        }
+      } else {
         // Fallback for desktop camera without gyro: use manual swipe yaw/pitch
         const euler = new THREE.Euler(this.manualPitch, this.gyroManager.userYawOffset, 0, 'YXZ');
         this.camera.quaternion.setFromEuler(euler);
@@ -1034,7 +1101,7 @@ export class WeddingARScene {
 
     // 2. Twin Wedding Rings Hover & Sparkle Rotation
     if (this.ringGroup) {
-      this.ringGroup.position.y = 0.48 + Math.sin(time * 1.8) * 0.025;
+      this.ringGroup.position.y = 0.34 + Math.sin(time * 1.8) * 0.02;
       this.ringGroup.rotation.y = time * 0.45;
 
       if (this.diamondGlint) {

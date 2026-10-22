@@ -89,7 +89,7 @@ async function setView(viewName) {
 
     const success = await arScene.startCamera();
     if (success) {
-      guidanceText.textContent = '✨ Cincin & Bunga terletak tetap di atas meja anda • Pusingkan telefon atau seret 360° untuk melihat setiap sudut!';
+      guidanceText.textContent = '✨ Cincin sentiasa tetap di atas meja • Sentuh skrin pada meja untuk alih kedudukan • Pusing telefon 360°!';
     } else {
       guidanceText.textContent = 'Mod Simulasi Meja 3D (Kamera tidak dapat diakses) • Seret 360° untuk putar!';
       arScene.virtualTable.visible = true;
@@ -141,7 +141,7 @@ btnToggleRotate?.addEventListener('click', () => {
 
 btnRecenterAnchor?.addEventListener('click', () => {
   arScene.recenterAnchor();
-  guidanceText.textContent = '🎯 Kedudukan cincin & bunga ditetapkan semula tepat di hadapan anda!';
+  guidanceText.textContent = '🎯 Cincin diletakkan semula tepat di atas meja di hadapan anda!';
 });
 
 // -----------------------------------------------------------------------------
