@@ -313,6 +313,163 @@ html, body {
 }
 
 /* --------------------------------------------------------------------------
+   Lock Table & 360 Rotation Control Bar
+   -------------------------------------------------------------------------- */
+.lock-table-bar {
+  position: absolute;
+  bottom: 135px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.btn-lock-anchor {
+  background: rgba(13, 30, 23, 0.9);
+  border: 1.5px solid var(--color-gold-primary);
+  color: var(--color-gold-light);
+  padding: 8px 18px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: var(--glass-blur);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 12px var(--color-gold-glow);
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.btn-lock-anchor.locked {
+  background: rgba(15, 60, 40, 0.95);
+  border-color: #2ecc71;
+  color: #eaffea;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 14px rgba(46, 204, 113, 0.4);
+}
+
+.btn-lock-anchor:active {
+  transform: scale(0.95);
+}
+
+.btn-rotate-360 {
+  background: rgba(13, 30, 23, 0.9);
+  border: 1.5px solid var(--color-gold-primary);
+  color: var(--color-gold-light);
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-royal);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  backdrop-filter: var(--glass-blur);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  transition: all 0.25s ease;
+}
+
+.btn-rotate-360.active {
+  background: var(--color-gold-primary);
+  color: #07130e;
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.6);
+}
+
+/* --------------------------------------------------------------------------
+   Welcome Modal Card (Initial Scan Entry)
+   -------------------------------------------------------------------------- */
+.welcome-card {
+  max-width: 440px;
+  width: 90%;
+  margin: auto;
+  padding: 28px 24px 24px;
+  text-align: center;
+  border: 2px solid var(--color-gold-primary);
+  box-shadow: 0 0 35px rgba(212, 175, 55, 0.35), 0 20px 60px rgba(0, 0, 0, 0.85);
+  animation: welcomePop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes welcomePop {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.welcome-bismillah {
+  font-family: serif;
+  font-size: 1.25rem;
+  color: var(--color-gold-primary);
+  margin-bottom: 8px;
+}
+
+.welcome-badge {
+  font-family: var(--font-royal);
+  font-size: 0.72rem;
+  letter-spacing: 2px;
+  color: var(--color-gold-light);
+  margin-bottom: 6px;
+}
+
+.welcome-title {
+  font-family: var(--font-serif);
+  font-size: 1.85rem;
+  color: var(--color-gold-light);
+  margin-bottom: 10px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+.welcome-table-badge {
+  display: inline-block;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid var(--color-gold-primary);
+  color: var(--color-gold-light);
+  padding: 4px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.welcome-desc {
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: #e0e5e2;
+  margin-bottom: 22px;
+}
+
+.welcome-buttons-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-welcome-action {
+  font-size: 0.95rem;
+  padding: 14px 20px;
+  box-shadow: 0 4px 25px rgba(212, 175, 55, 0.4);
+}
+
+.btn-welcome-secondary {
+  background: transparent;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: var(--color-gold-light);
+  border-radius: var(--radius-pill);
+  padding: 10px 18px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-welcome-secondary:hover {
+  background: rgba(212, 175, 55, 0.15);
+}
+
+/* --------------------------------------------------------------------------
    Bottom Floating Controls (HUD)
    -------------------------------------------------------------------------- */
 .bottom-hud-bar {

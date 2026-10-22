@@ -69,6 +69,18 @@
         </div>
       </div>
 
+      <!-- Lock Table & 360 Rotation Control Bar -->
+      <div class="lock-table-bar" id="lock-table-bar">
+        <button class="btn-lock-anchor" id="btn-toggle-lock" title="Kunci lokasi di meja">
+          <span id="lock-icon">📍</span>
+          <span id="lock-text">Kunci Kedudukan di Meja</span>
+        </button>
+        <button class="btn-rotate-360" id="btn-toggle-rotate" title="Pusing 360° Automatik">
+          <span class="icon-360">🔄</span>
+          <span class="label-360">360°</span>
+        </button>
+      </div>
+
       <!-- Bottom Floating Controls (HUD) -->
       <nav class="bottom-hud-bar" id="bottom-hud">
         <!-- Quick Element Filter -->
@@ -101,6 +113,27 @@
           </button>
         </div>
       </nav>
+
+      <!-- Modal: Welcome / Launch AR Experience (Opens when guest scans QR) -->
+      <div class="modal-backdrop" id="welcome-modal">
+        <div class="welcome-card glass-card">
+          <div class="welcome-bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
+          <div class="welcome-badge">✨ WALIMATULURUS RAJA SEHARI ✨</div>
+          <h1 class="welcome-title" id="welcome-couple-name">Arif & Haziqah</h1>
+          <div class="welcome-table-badge" id="welcome-table-info">Meja 07 • Kasih Abadi</div>
+          <p class="welcome-desc">
+            Selamat datang! Saksikan bunga digital mekar, sepasang cincin berlian, dan rama-rama bercahaya muncul terapung di atas meja anda dalam paparan 360 darjah.
+          </p>
+          <div class="welcome-buttons-stack">
+            <button class="btn-primary-gold btn-welcome-action" id="btn-start-camera-experience">
+              📸 Buka Kamera & Mulakan Keajaiban
+            </button>
+            <button class="btn-welcome-secondary" id="btn-start-3d-experience">
+              🥂 Teruskan Tanpa Kamera (Mod Meja 3D)
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Printable Card Generator Screen Container (Toggled via Tab) -->
       <div class="generator-overlay-container hidden" id="card-generator-screen">

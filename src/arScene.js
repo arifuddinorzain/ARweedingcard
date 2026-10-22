@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { weddingAudio } from './audio.js';
 
 export class WeddingARScene {
@@ -9,6 +10,7 @@ export class WeddingARScene {
     this.scene = null;
     this.camera = null;
     this.renderer = null;
+    this.controls = null;
     
     // Group holding all table 3D objects
     this.arAnchor = null;
@@ -32,11 +34,12 @@ export class WeddingARScene {
     this.isCameraActive = false;
     this.isVirtualTableVisible = false;
     this.isReticleVisible = true;
+    this.isTableLocked = false;
+    
+    // Gyroscope tracking
+    this.requestGyroPermission = null;
     
     // Interaction states
-    this.isDragging = false;
-    this.previousTouchPosition = { x: 0, y: 0 };
-    this.initialPinchDistance = null;
     this.currentScale = 1.0;
     
     // Scene mode toggles
@@ -54,8 +57,8 @@ export class WeddingARScene {
 
     // 2. Camera
     this.camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
-    this.camera.position.set(0, 1.8, 2.6);
-    this.camera.lookAt(0, 0.3, 0);
+    this.camera.position.set(0, 1.6, 2.5);
+    this.camera.lookAt(0, 0.25, 0);
 
     // 3. Renderer with transparent background for WebAR overlay
     this.renderer = new THREE.WebGLRenderer({
@@ -71,15 +74,26 @@ export class WeddingARScene {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    // 4. Lighting
+    // 4. OrbitControls for 360-degree rotation and zoom
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.05;
+    this.controls.minDistance = 0.6;
+    this.controls.maxDistance = 5.0;
+    this.controls.maxPolarAngle = Math.PI / 2.05; // Keep camera above table surface
+    this.controls.target.set(0, 0.25, 0);
+    this.controls.autoRotate = false;
+    this.controls.autoRotateSpeed = 1.4;
+
+    // 5. Lighting
     this.setupLighting();
 
-    // 5. Main AR Anchor Group
+    // 6. Main AR Anchor Group (holds the rings, flowers, butterflies)
     this.arAnchor = new THREE.Group();
     this.arAnchor.position.set(0, 0, 0);
     this.scene.add(this.arAnchor);
 
-    // 6. Build 3D Elements
+    // 7. Build 3D Elements
     this.buildSurfaceReticle();
     this.buildVirtualBanquetTable();
     this.buildEnchantedFlowerCenterpiece();
@@ -87,11 +101,12 @@ export class WeddingARScene {
     this.buildButterflies();
     this.buildFallingPetalsAndStardust();
 
-    // 7. Event Listeners
+    // 8. Event Listeners & Sensors
     window.addEventListener('resize', () => this.onWindowResize());
     this.setupGestures();
+    this.setupDeviceOrientation();
 
-    // 8. Start Loop
+    // 9. Start Loop
     this.animate = this.animate.bind(this);
     requestAnimationFrame(this.animate);
   }
@@ -152,7 +167,7 @@ export class WeddingARScene {
     this.scene.add(this.reticle);
   }
 
-  // Photorealistic virtual banquet table (used when camera is off or in 3D simulator mode)
+  // Photorealistic virtual banquet table
   buildVirtualBanquetTable() {
     this.virtualTable = new THREE.Group();
 
@@ -221,7 +236,6 @@ export class WeddingARScene {
     }
 
     this.arAnchor.add(this.virtualTable);
-    // Initially show virtual table; hide it when user switches to real camera AR
     this.virtualTable.visible = true;
   }
 
@@ -272,12 +286,9 @@ export class WeddingARScene {
     }
 
     // Procedural Blooming Petals
-    // Multi-layered rose/peony bud with organic curve
     this.petals = [];
-    const petalLayers = 5;
     const petalsPerLayer = [4, 6, 8, 10, 12];
 
-    // Petal Shader / Material (Warm Romantic Royal Burgundy / Velvet Rose)
     const innerPetalMat = new THREE.MeshStandardMaterial({
       color: 0xc41e3a, // Crimson Velvet
       roughness: 0.5,
@@ -301,7 +312,6 @@ export class WeddingARScene {
       for (let i = 0; i < count; i++) {
         const angle = (i / count) * Math.PI * 2 + (layerIdx * 0.4);
 
-        // Curved petal geometry
         const petalShape = new THREE.SphereGeometry(0.07 + layerIdx * 0.016, 16, 16, 0, Math.PI, 0, Math.PI / 1.5);
         const mat = layerIdx === 0 ? innerPetalMat : (layerIdx === 4 ? goldTippedPetalMat : outerPetalMat);
         const petal = new THREE.Mesh(petalShape, mat);
@@ -309,18 +319,16 @@ export class WeddingARScene {
         petal.castShadow = true;
         petal.receiveShadow = true;
 
-        // Anchor pivot group for smooth blooming rotation
         const petalPivot = new THREE.Group();
         petalPivot.position.set(0, layerHeight, 0);
 
         petal.position.set(Math.cos(angle) * layerRadius, 0, Math.sin(angle) * layerRadius);
         petal.rotation.y = -angle + Math.PI / 2;
-        petal.rotation.x = 0.2; // initial closed tilt
+        petal.rotation.x = 0.2;
 
         petalPivot.add(petal);
         this.flowerGroup.add(petalPivot);
 
-        // Save data for dynamic bloom morphing
         this.petals.push({
           pivot: petalPivot,
           mesh: petal,
@@ -328,7 +336,7 @@ export class WeddingARScene {
           angle: angle,
           baseRadius: layerRadius,
           closedRotX: 0.1 + layerIdx * 0.05,
-          bloomedRotX: 0.4 + layerIdx * 0.22, // tilts outwards when blooming
+          bloomedRotX: 0.4 + layerIdx * 0.22,
           closedScale: 0.35 + layerIdx * 0.12,
           bloomedScale: 1.0 + layerIdx * 0.18
         });
@@ -352,7 +360,7 @@ export class WeddingARScene {
   // 3D Interlinked Champagne Gold & Platinum Diamond Wedding Rings
   buildTwinWeddingRings() {
     this.ringGroup = new THREE.Group();
-    this.ringGroup.position.set(0, 0.48, 0); // Floats above flower centerpiece
+    this.ringGroup.position.set(0, 0.48, 0);
 
     // 1. Groom's Ring - Classic Wide Champagne Gold Band
     const groomRingGeo = new THREE.TorusGeometry(0.12, 0.018, 32, 64);
@@ -370,7 +378,7 @@ export class WeddingARScene {
     // 2. Bride's Ring - Platinum Solitaire Ring with Diamond
     const brideRingGeo = new THREE.TorusGeometry(0.105, 0.014, 32, 64);
     const platinumBandMat = new THREE.MeshStandardMaterial({
-      color: 0xf5f5f5, // Pure Platinum / White Gold
+      color: 0xf5f5f5, // Pure Platinum
       metalness: 0.98,
       roughness: 0.08
     });
@@ -380,20 +388,20 @@ export class WeddingARScene {
     brideRing.position.set(0.045, 0.03, 0);
     brideRing.castShadow = true;
 
-    // Diamond Crown Mount (6 tiny prongs)
+    // Diamond Crown Mount
     const crownGeo = new THREE.CylinderGeometry(0.026, 0.016, 0.024, 6);
     const crown = new THREE.Mesh(crownGeo, platinumBandMat);
     crown.position.set(0, 0.11, 0);
     brideRing.add(crown);
 
-    // Brilliant Solitaire Diamond (Faceted Octahedron/Cone geometry)
+    // Solitaire Diamond
     const diamondGeo = new THREE.OctahedronGeometry(0.035, 1);
     const diamondMat = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
       metalness: 0.05,
       roughness: 0.0,
       transmission: 0.95,
-      ior: 2.42, // Real Diamond Refraction Index!
+      ior: 2.42,
       thickness: 0.08,
       specularIntensity: 2.0,
       transparent: true,
@@ -431,7 +439,7 @@ export class WeddingARScene {
     this.arAnchor.add(this.ringGroup);
   }
 
-  // 3D Animated Butterflies with organic wing flap and flight paths
+  // 3D Animated Butterflies
   buildButterflies() {
     this.butterflies = [];
     const butterflyColors = [
@@ -444,14 +452,12 @@ export class WeddingARScene {
     butterflyColors.forEach((colorScheme, idx) => {
       const bGroup = new THREE.Group();
 
-      // Slender Torso
       const bodyGeo = new THREE.CylinderGeometry(0.005, 0.003, 0.05, 8);
       bodyGeo.rotateX(Math.PI / 2);
       const bodyMat = new THREE.MeshStandardMaterial({ color: colorScheme.body });
       const body = new THREE.Mesh(bodyGeo, bodyMat);
       bGroup.add(body);
 
-      // Wing Shape (Procedural 2D Shape with curves)
       const wingShape = new THREE.Shape();
       wingShape.moveTo(0, 0);
       wingShape.bezierCurveTo(0.04, 0.06, 0.09, 0.07, 0.11, 0.04);
@@ -467,7 +473,6 @@ export class WeddingARScene {
         opacity: 0.92
       });
 
-      // Left Wing Pivot
       const leftPivot = new THREE.Group();
       leftPivot.position.set(0.004, 0.005, 0);
       const leftWing = new THREE.Mesh(wingGeo, wingMat);
@@ -475,7 +480,6 @@ export class WeddingARScene {
       leftPivot.add(leftWing);
       bGroup.add(leftPivot);
 
-      // Right Wing Pivot
       const rightPivot = new THREE.Group();
       rightPivot.position.set(-0.004, 0.005, 0);
       const rightWing = new THREE.Mesh(wingGeo, wingMat);
@@ -483,7 +487,6 @@ export class WeddingARScene {
       rightPivot.add(rightWing);
       bGroup.add(rightPivot);
 
-      // Glow Sprite attached to butterfly
       const bGlowCanvas = document.createElement('canvas');
       bGlowCanvas.width = 32;
       bGlowCanvas.height = 32;
@@ -504,7 +507,6 @@ export class WeddingARScene {
       bGlow.scale.set(0.12, 0.12, 1);
       bGroup.add(bGlow);
 
-      // Butterfly path parameters
       this.butterflies.push({
         group: bGroup,
         leftPivot: leftPivot,
@@ -523,7 +525,6 @@ export class WeddingARScene {
 
   // Swirling Falling Petals Vortex & Golden Stardust Particles
   buildFallingPetalsAndStardust() {
-    // 1. Falling 3D Rose Petals
     this.fallingPetals = [];
     const petalGeo = new THREE.SphereGeometry(0.022, 8, 8, 0, Math.PI, 0, Math.PI / 2);
     const petalMat = new THREE.MeshStandardMaterial({
@@ -557,7 +558,6 @@ export class WeddingARScene {
       this.arAnchor.add(petal);
     }
 
-    // 2. Sparkling Golden Stardust Points
     const stardustCount = 200;
     const stardustGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(stardustCount * 3);
@@ -580,7 +580,6 @@ export class WeddingARScene {
     stardustGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     stardustGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    // Stardust Texture
     const sCanvas = document.createElement('canvas');
     sCanvas.width = 16;
     sCanvas.height = 16;
@@ -605,68 +604,159 @@ export class WeddingARScene {
     this.arAnchor.add(this.particleSystem);
   }
 
-  // Touch and Mouse Gesture Handling (Drag, Scale, Place)
+  // Device Gyroscope Parallax
+  setupDeviceOrientation() {
+    const handleOrientation = (e) => {
+      if (!this.isCameraActive) return;
+      if (e.beta !== null && e.gamma !== null) {
+        const pitch = (e.beta - 45) * (Math.PI / 180) * 0.1;
+        const roll = e.gamma * (Math.PI / 180) * 0.1;
+        this.arAnchor.rotation.x = pitch;
+        this.arAnchor.rotation.z = -roll;
+      }
+    };
+
+    if (typeof window !== 'undefined' && window.DeviceOrientationEvent) {
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        this.requestGyroPermission = async () => {
+          try {
+            const resp = await DeviceOrientationEvent.requestPermission();
+            if (resp === 'granted') {
+              window.addEventListener('deviceorientation', handleOrientation);
+            }
+          } catch (e) {
+            console.log('Gyro permission notice:', e);
+          }
+        };
+      } else {
+        window.addEventListener('deviceorientation', handleOrientation);
+      }
+    }
+  }
+
+  // Tap Detection on Canvas (Differentiates Tap from 360° Drag)
   setupGestures() {
-    // Mouse / Touch Drag to rotate or reposition
+    let pointerStartX = 0;
+    let pointerStartY = 0;
+    let pointerStartTime = 0;
+
     const onPointerDown = (e) => {
-      this.isDragging = true;
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      this.previousTouchPosition = { x: clientX, y: clientY };
-
-      if (e.touches && e.touches.length === 2) {
-        // Pinch start
-        const dx = e.touches[0].clientX - e.touches[1].clientX;
-        const dy = e.touches[0].clientY - e.touches[1].clientY;
-        this.initialPinchDistance = Math.hypot(dx, dy);
-      }
+      pointerStartX = clientX;
+      pointerStartY = clientY;
+      pointerStartTime = Date.now();
     };
 
-    const onPointerMove = (e) => {
-      if (!this.isDragging) return;
+    const onPointerUp = (e) => {
+      const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+      const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+      const dist = Math.hypot(clientX - pointerStartX, clientY - pointerStartY);
+      const time = Date.now() - pointerStartTime;
 
-      if (e.touches && e.touches.length === 2 && this.initialPinchDistance) {
-        // Handle Pinch Zoom / Scale
-        const dx = e.touches[0].clientX - e.touches[1].clientX;
-        const dy = e.touches[0].clientY - e.touches[1].clientY;
-        const currentDistance = Math.hypot(dx, dy);
-        const scaleFactor = currentDistance / this.initialPinchDistance;
-
-        this.currentScale = Math.min(Math.max(this.currentScale * (1 + (scaleFactor - 1) * 0.08), 0.4), 2.5);
-        this.arAnchor.scale.set(this.currentScale, this.currentScale, this.currentScale);
-        this.initialPinchDistance = currentDistance;
-        return;
+      // If moved less than 8px and within 300ms, it is a TAP!
+      if (dist < 8 && time < 300) {
+        this.onTapCanvas();
       }
-
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const deltaX = clientX - this.previousTouchPosition.x;
-
-      // Smooth horizontal rotation of the wedding centerpiece
-      this.arAnchor.rotation.y += deltaX * 0.008;
-
-      this.previousTouchPosition = {
-        x: clientX,
-        y: e.touches ? e.touches[0].clientY : e.clientY
-      };
-    };
-
-    const onPointerUp = () => {
-      this.isDragging = false;
-      this.initialPinchDistance = null;
     };
 
     this.canvas.addEventListener('mousedown', onPointerDown);
-    this.canvas.addEventListener('mousemove', onPointerMove);
-    window.addEventListener('mouseup', onPointerUp);
+    this.canvas.addEventListener('mouseup', onPointerUp);
 
     this.canvas.addEventListener('touchstart', onPointerDown, { passive: true });
-    this.canvas.addEventListener('touchmove', onPointerMove, { passive: true });
-    window.addEventListener('touchend', onPointerUp);
+    this.canvas.addEventListener('touchend', onPointerUp, { passive: true });
+  }
 
-    // Tap on screen to place centerpiece at reticle or trigger magical burst
-    this.canvas.addEventListener('click', (e) => {
+  onTapCanvas() {
+    if (!this.isTableLocked && this.isCameraActive) {
+      // Tap locks the position on table!
+      this.lockTablePosition();
+    } else {
+      // Tap triggers magic bloom & butterfly flourish!
       this.triggerMagicBurst();
-    });
+    }
+  }
+
+  // Lock the location of the 3D wedding rings & flowers on the table
+  lockTablePosition() {
+    this.isTableLocked = true;
+    if (this.reticle) {
+      this.reticle.material.color.setHex(0x2ecc71); // Emerald green locked indicator
+      if (this.reticle.children[0]) {
+        this.reticle.children[0].material.color.setHex(0x2ecc71);
+      }
+    }
+    weddingAudio.playRingShimmer();
+    this.playOpeningAnimation();
+    return true;
+  }
+
+  // Unlock to reposition
+  unlockTablePosition() {
+    this.isTableLocked = false;
+    if (this.reticle) {
+      this.reticle.material.color.setHex(0xd4af37); // Gold target indicator
+      if (this.reticle.children[0]) {
+        this.reticle.children[0].material.color.setHex(0xffe6a3);
+      }
+    }
+    return false;
+  }
+
+  toggleLockTablePosition() {
+    if (this.isTableLocked) {
+      return this.unlockTablePosition();
+    } else {
+      return this.lockTablePosition();
+    }
+  }
+
+  // Toggle Auto 360-degree rotation
+  toggleAutoRotate() {
+    if (this.controls) {
+      this.controls.autoRotate = !this.controls.autoRotate;
+      return this.controls.autoRotate;
+    }
+    return false;
+  }
+
+  // Dramatic Opening Ceremony Animation when entering or locking position
+  playOpeningAnimation() {
+    this.bloomProgress = 0;
+    this.targetBloom = 1.0;
+
+    if (this.ringGroup) {
+      this.ringGroup.scale.set(0.01, 0.01, 0.01);
+      this.ringGroup.position.y = 1.1;
+
+      const startTime = performance.now();
+      const duration = 1200;
+
+      const animateDrop = (now) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1.0);
+
+        // Back-out easing for majestic bounce landing
+        const s = 1.70158;
+        const t = progress - 1;
+        const ease = t * t * ((s + 1) * t + s) + 1;
+
+        const curScale = Math.max(0.01, ease);
+        this.ringGroup.scale.set(curScale, curScale, curScale);
+        this.ringGroup.position.y = 1.1 - ease * 0.62; // settles at ~0.48
+
+        if (progress < 1.0) {
+          requestAnimationFrame(animateDrop);
+        } else {
+          this.ringGroup.position.y = 0.48;
+          this.ringGroup.scale.set(1, 1, 1);
+        }
+      };
+      requestAnimationFrame(animateDrop);
+    }
+
+    weddingAudio.playBloomSfx();
+    weddingAudio.playRingShimmer();
   }
 
   // Interactive Tap Effect: Bloom / Butterflies flutter / Sparkles burst
@@ -674,13 +764,11 @@ export class WeddingARScene {
     weddingAudio.playButterflyFlutter();
     weddingAudio.playBloomSfx();
 
-    // Trigger instant blooming flourish
     this.targetBloom = this.bloomProgress < 0.5 ? 1.0 : 0.2;
     setTimeout(() => {
       this.targetBloom = 1.0;
     }, 1200);
 
-    // Gentle bounce animation on rings
     if (this.ringGroup) {
       this.ringGroup.position.y += 0.08;
       setTimeout(() => {
@@ -694,23 +782,31 @@ export class WeddingARScene {
     try {
       const constraints = {
         video: {
-          facingMode: { ideal: 'environment' }, // Back camera on mobile
+          facingMode: { ideal: 'environment' },
           width: { ideal: 1920 },
           height: { ideal: 1080 }
         },
         audio: false
       };
 
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('getUserMedia not supported on this origin');
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       this.video.srcObject = stream;
       await this.video.play();
       this.isCameraActive = true;
 
-      // In real camera AR mode, hide the virtual wooden banquet table so user sees their actual table!
       if (this.virtualTable) {
         this.virtualTable.visible = false;
       }
       this.reticle.visible = true;
+
+      if (this.requestGyroPermission) {
+        this.requestGyroPermission();
+      }
+
       return true;
     } catch (err) {
       console.warn('Camera access denied or unavailable, keeping virtual table mode.', err);
@@ -765,7 +861,6 @@ export class WeddingARScene {
 
   // Capture High-Res Snapshot with Wedding Polaroid Frame
   captureSnapshot(coupleName = "Arif & Haziqah", tableInfo = "Meja 07 • Kasih Abadi") {
-    // Create an offscreen canvas to composite: Camera Frame + WebGL 3D Canvas + Gold Wedding Frame
     const snapshotCanvas = document.createElement('canvas');
     const width = this.canvas.width;
     const height = this.canvas.height;
@@ -773,9 +868,7 @@ export class WeddingARScene {
     snapshotCanvas.height = height;
     const ctx = snapshotCanvas.getContext('2d');
 
-    // 1. Draw Camera Feed if active, else luxury dark emerald gradient background
     if (this.isCameraActive && this.video.readyState >= 2) {
-      // Draw camera image maintaining aspect ratio
       const vWidth = this.video.videoWidth;
       const vHeight = this.video.videoHeight;
       const vAspect = vWidth / vHeight;
@@ -803,31 +896,24 @@ export class WeddingARScene {
       ctx.fillRect(0, 0, width, height);
     }
 
-    // 2. Draw 3D WebGL Canvas over video
     ctx.drawImage(this.canvas, 0, 0);
 
-    // 3. Draw Luxury Gold Wedding Watermark Frame
-    // Outer border
     ctx.strokeStyle = '#d4af37';
     ctx.lineWidth = Math.max(width * 0.008, 4);
     ctx.strokeRect(20, 20, width - 40, height - 40);
 
-    // Inner subtle thin gold border
     ctx.strokeStyle = 'rgba(243, 229, 171, 0.4)';
     ctx.lineWidth = 1.5;
     ctx.strokeRect(28, 28, width - 56, height - 56);
 
-    // Bottom Wedding Banner
     const bannerHeight = 85;
     const bannerY = height - 35 - bannerHeight;
     ctx.fillStyle = 'rgba(10, 20, 16, 0.82)';
     ctx.fillRect(30, bannerY, width - 60, bannerHeight);
 
-    // Gold divider line
     ctx.fillStyle = '#d4af37';
     ctx.fillRect(30, bannerY, width - 60, 2);
 
-    // Wedding Typography
     ctx.textAlign = 'center';
     ctx.fillStyle = '#f3e5ab';
     ctx.font = `bold ${Math.max(Math.floor(width * 0.04), 22)}px 'Playfair Display', serif`;
@@ -837,7 +923,6 @@ export class WeddingARScene {
     ctx.font = `${Math.max(Math.floor(width * 0.024), 14)}px 'Plus Jakarta Sans', sans-serif`;
     ctx.fillText(`✨ ${tableInfo} • Magic Table AR ✨`, width / 2, bannerY + 65);
 
-    // Return Data URL
     return snapshotCanvas.toDataURL('image/png');
   }
 
@@ -855,6 +940,11 @@ export class WeddingARScene {
     const delta = this.clock.getDelta();
     const time = this.clock.getElapsedTime();
 
+    // 0. Update 360-degree OrbitControls
+    if (this.controls) {
+      this.controls.update();
+    }
+
     // 1. Smooth Petal Blooming Morph Animation
     this.bloomProgress += (this.targetBloom - this.bloomProgress) * 0.04;
     this.petals.forEach((p) => {
@@ -867,11 +957,9 @@ export class WeddingARScene {
 
     // 2. Twin Wedding Rings Hover & Sparkle Rotation
     if (this.ringGroup) {
-      // Gentle levitation float
       this.ringGroup.position.y = 0.48 + Math.sin(time * 1.8) * 0.025;
       this.ringGroup.rotation.y = time * 0.45;
 
-      // Diamond sparkle pulsing
       if (this.diamondGlint) {
         const glintScale = 0.16 + Math.sin(time * 6) * 0.06;
         this.diamondGlint.scale.set(glintScale, glintScale, 1);
@@ -883,7 +971,6 @@ export class WeddingARScene {
 
     // 3. Butterflies Flight Paths & Realistic Flapping
     this.butterflies.forEach((b) => {
-      // 3D Lissajous Flight Orbit around centerpiece
       const angle = time * b.speed + b.phase;
       const x = Math.sin(angle) * b.radiusX;
       const z = Math.cos(angle * 1.3) * b.radiusZ;
@@ -891,13 +978,11 @@ export class WeddingARScene {
 
       b.group.position.set(x, y, z);
 
-      // Orient butterfly along flight direction
       const nextAngle = angle + 0.05;
       const nextX = Math.sin(nextAngle) * b.radiusX;
       const nextZ = Math.cos(nextAngle * 1.3) * b.radiusZ;
       b.group.rotation.y = Math.atan2(nextX - x, nextZ - z);
 
-      // Wing flap sinusoidal oscillation
       const flapAngle = Math.sin(time * b.flapSpeed) * 0.85;
       b.leftPivot.rotation.z = flapAngle;
       b.rightPivot.rotation.z = -flapAngle;
@@ -912,7 +997,6 @@ export class WeddingARScene {
       p.mesh.rotation.x += p.rotSpeedX * delta;
       p.mesh.rotation.y += p.rotSpeedY * delta;
 
-      // Reset petal when hitting table plane
       if (p.mesh.position.y < 0.02) {
         p.mesh.position.y = 0.9 + Math.random() * 0.3;
         p.mesh.position.x = (Math.random() - 0.5) * 1.1;

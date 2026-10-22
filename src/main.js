@@ -5,7 +5,7 @@ import { weddingAudio } from './audio.js';
 
 // Application State
 const appState = {
-  currentView: 'ar-camera', // 'ar-camera', 'virtual-3d', 'table-card'
+  currentView: 'virtual-3d', // 'ar-camera', 'virtual-3d', 'table-card'
   filterMode: 'all',        // 'all', 'flowers', 'rings', 'butterflies'
   isMusicPlaying: false,
   weddingInfo: TableCardGenerator.parseUrlParams()
@@ -27,6 +27,20 @@ const tabBtnVirtual = document.getElementById('tab-btn-virtual');
 const tabBtnCard = document.getElementById('tab-btn-card');
 const guidanceText = document.getElementById('guidance-text');
 const bottomHud = document.getElementById('bottom-hud');
+
+// Lock & 360 Rotation Controls
+const lockTableBar = document.getElementById('lock-table-bar');
+const btnToggleLock = document.getElementById('btn-toggle-lock');
+const lockIcon = document.getElementById('lock-icon');
+const lockText = document.getElementById('lock-text');
+const btnToggleRotate = document.getElementById('btn-toggle-rotate');
+
+// Welcome Entry Modal
+const welcomeModal = document.getElementById('welcome-modal');
+const welcomeCoupleName = document.getElementById('welcome-couple-name');
+const welcomeTableInfo = document.getElementById('welcome-table-info');
+const btnStartCameraExperience = document.getElementById('btn-start-camera-experience');
+const btnStart3dExperience = document.getElementById('btn-start-3d-experience');
 
 const cardGeneratorScreen = document.getElementById('card-generator-screen');
 const btnRebloom = document.getElementById('btn-rebloom');
@@ -56,10 +70,12 @@ const wishingWall = new WishingWall();
 // 1. Initialize Wedding Info from URL / Defaults
 // -----------------------------------------------------------------------------
 function initWeddingData() {
-  const { couple, table } = appState.weddingInfo;
+  const { couple, table, theme } = appState.weddingInfo;
   if (headerCoupleName) headerCoupleName.textContent = couple;
   if (badgeTableText) badgeTableText.textContent = table;
   if (inputWishTable) inputWishTable.value = table;
+  if (welcomeCoupleName) welcomeCoupleName.textContent = couple;
+  if (welcomeTableInfo) welcomeTableInfo.textContent = `${table} • ${theme || 'Kasih Abadi'}`;
 }
 
 // -----------------------------------------------------------------------------
@@ -68,40 +84,81 @@ function initWeddingData() {
 async function setView(viewName) {
   appState.currentView = viewName;
 
-  // Update tabs visual state
   [tabBtnCamera, tabBtnVirtual, tabBtnCard].forEach(btn => btn?.classList.remove('active'));
 
   if (viewName === 'ar-camera') {
     tabBtnCamera?.classList.add('active');
     cardGeneratorScreen?.classList.add('hidden');
     bottomHud?.classList.remove('hidden');
+    if (lockTableBar) lockTableBar.style.display = 'flex';
 
     const success = await arScene.startCamera();
     if (success) {
-      guidanceText.textContent = 'Halakan kamera ke meja anda • Sentuh skrin untuk mekar & lepaskan rama-rama';
+      guidanceText.textContent = '📸 Kamera Aktif • Tekan "Kunci Kedudukan" untuk melekatkannya di meja & pusing 360°!';
     } else {
-      // Fallback message if camera access denied
-      guidanceText.textContent = 'Mod Simulasi Meja 3D Aktif (Kamera tidak dapat diakses)';
+      guidanceText.textContent = 'Mod Simulasi Meja 3D (Kamera tidak dapat diakses) • Seret 360° untuk putar!';
       arScene.virtualTable.visible = true;
     }
   } else if (viewName === 'virtual-3d') {
     tabBtnVirtual?.classList.add('active');
     cardGeneratorScreen?.classList.add('hidden');
     bottomHud?.classList.remove('hidden');
+    if (lockTableBar) lockTableBar.style.display = 'flex';
 
     arScene.stopCamera();
     arScene.virtualTable.visible = true;
-    guidanceText.textContent = 'Mod Simulasi Meja Perkahwinan 3D • Seret untuk putar sudut pandangan';
+    guidanceText.textContent = '🥂 Meja Jamuan 3D • Seret untuk putar 360°, cubit untuk zum cincin!';
   } else if (viewName === 'table-card') {
     tabBtnCard?.classList.add('active');
     cardGeneratorScreen?.classList.remove('hidden');
     bottomHud?.classList.add('hidden');
+    if (lockTableBar) lockTableBar.style.display = 'none';
     cardGen.renderCard();
   }
 }
 
 // -----------------------------------------------------------------------------
-// 3. Audio & Music Controller
+// 3. Welcome Entry Modal Actions
+// -----------------------------------------------------------------------------
+btnStartCameraExperience?.addEventListener('click', async () => {
+  welcomeModal?.classList.add('hidden');
+  await setView('ar-camera');
+  arScene.playOpeningAnimation();
+  weddingAudio.init();
+});
+
+btnStart3dExperience?.addEventListener('click', () => {
+  welcomeModal?.classList.add('hidden');
+  setView('virtual-3d');
+  arScene.playOpeningAnimation();
+  weddingAudio.init();
+});
+
+// -----------------------------------------------------------------------------
+// 4. Lock Table Location & 360-Degree Controls
+// -----------------------------------------------------------------------------
+btnToggleLock?.addEventListener('click', () => {
+  const isLocked = arScene.toggleLockTablePosition();
+  if (isLocked) {
+    btnToggleLock.classList.add('locked');
+    lockIcon.textContent = '🔒';
+    lockText.textContent = 'Terkunci di Meja (Buka Kunci)';
+    guidanceText.textContent = '✨ Cincin & Bunga Terkunci di Meja! Pusingkan telefon atau seret 360° untuk lihat dari setiap sudut.';
+  } else {
+    btnToggleLock.classList.remove('locked');
+    lockIcon.textContent = '📍';
+    lockText.textContent = 'Kunci Kedudukan di Meja';
+    guidanceText.textContent = 'Halakan ke meja dan tekan "Kunci Kedudukan di Meja"';
+  }
+});
+
+btnToggleRotate?.addEventListener('click', () => {
+  const isRotating = arScene.toggleAutoRotate();
+  btnToggleRotate.classList.toggle('active', isRotating);
+});
+
+// -----------------------------------------------------------------------------
+// 5. Audio & Music Controller
 // -----------------------------------------------------------------------------
 btnToggleMusic?.addEventListener('click', () => {
   const isPlaying = weddingAudio.toggleMusic();
@@ -116,13 +173,12 @@ btnToggleMusic?.addEventListener('click', () => {
   }
 });
 
-// Auto-trigger pleasant harp notes on first user interaction
 window.addEventListener('pointerdown', () => {
   weddingAudio.init();
 }, { once: true });
 
 // -----------------------------------------------------------------------------
-// 4. Filter Chips (All, Flowers, Rings, Butterflies)
+// 6. Filter Chips (All, Flowers, Rings, Butterflies)
 // -----------------------------------------------------------------------------
 document.querySelectorAll('.filter-chip').forEach(chip => {
   chip.addEventListener('click', (e) => {
@@ -143,7 +199,7 @@ document.querySelectorAll('.filter-chip').forEach(chip => {
 });
 
 // -----------------------------------------------------------------------------
-// 5. Interactive HUD Buttons
+// 7. Interactive HUD Buttons
 // -----------------------------------------------------------------------------
 btnRebloom?.addEventListener('click', () => {
   arScene.triggerBloom();
@@ -166,7 +222,6 @@ btnCloseSnap?.addEventListener('click', () => {
   snapshotModal.classList.add('hidden');
 });
 
-// Web Share API support for sharing snapshot
 btnShareSnap?.addEventListener('click', async () => {
   const dataUrl = snapshotPreviewImg.src;
   try {
@@ -181,7 +236,6 @@ btnShareSnap?.addEventListener('click', async () => {
         files: [file]
       });
     } else {
-      // Fallback
       window.open(dataUrl, '_blank');
     }
   } catch (err) {
@@ -190,7 +244,7 @@ btnShareSnap?.addEventListener('click', async () => {
 });
 
 // -----------------------------------------------------------------------------
-// 6. Guest Wishing Wall Controller
+// 8. Guest Wishing Wall Controller
 // -----------------------------------------------------------------------------
 function renderWishes() {
   if (wishesStreamContainer) {
@@ -207,7 +261,6 @@ btnCloseWishes?.addEventListener('click', () => {
   wishingModal.classList.add('hidden');
 });
 
-// Preset Chips Auto-fill
 document.querySelectorAll('.preset-chip').forEach(btn => {
   btn.addEventListener('click', () => {
     inputWishMsg.value = btn.textContent;
@@ -227,13 +280,11 @@ formNewWish?.addEventListener('submit', (e) => {
   inputWishMsg.value = '';
   renderWishes();
 
-  // Close modal after celebration
   setTimeout(() => {
     wishingModal.classList.add('hidden');
   }, 1200);
 });
 
-// Close modals when clicking backdrop
 [wishingModal, snapshotModal].forEach(modal => {
   modal?.addEventListener('click', (e) => {
     if (e.target === modal) {
@@ -243,14 +294,13 @@ formNewWish?.addEventListener('submit', (e) => {
 });
 
 // -----------------------------------------------------------------------------
-// 7. Navigation & Mode Switch Events
+// 9. Navigation & Mode Switch Events
 // -----------------------------------------------------------------------------
 tabBtnCamera?.addEventListener('click', () => setView('ar-camera'));
 tabBtnVirtual?.addEventListener('click', () => setView('virtual-3d'));
 tabBtnCard?.addEventListener('click', () => setView('table-card'));
 btnToggleGenerator?.addEventListener('click', () => setView('table-card'));
 
-// Custom event from Card Generator to switch back to AR
 window.addEventListener('switch-to-ar', (e) => {
   if (e.detail) {
     appState.weddingInfo = {
@@ -266,8 +316,7 @@ window.addEventListener('switch-to-ar', (e) => {
 });
 
 // -----------------------------------------------------------------------------
-// 8. Start Application
+// 10. Start Application
 // -----------------------------------------------------------------------------
 initWeddingData();
-// Start in Virtual 3D mode so table, flowers, rings, and butterflies are instantly visible!
 setView('virtual-3d');
