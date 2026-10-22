@@ -668,47 +668,8 @@ export class WeddingARScene {
   }
 
   onTapCanvas() {
-    if (!this.isTableLocked && this.isCameraActive) {
-      // Tap locks the position on table!
-      this.lockTablePosition();
-    } else {
-      // Tap triggers magic bloom & butterfly flourish!
-      this.triggerMagicBurst();
-    }
-  }
-
-  // Lock the location of the 3D wedding rings & flowers on the table
-  lockTablePosition() {
-    this.isTableLocked = true;
-    if (this.reticle) {
-      this.reticle.material.color.setHex(0x2ecc71); // Emerald green locked indicator
-      if (this.reticle.children[0]) {
-        this.reticle.children[0].material.color.setHex(0x2ecc71);
-      }
-    }
-    weddingAudio.playRingShimmer();
-    this.playOpeningAnimation();
-    return true;
-  }
-
-  // Unlock to reposition
-  unlockTablePosition() {
-    this.isTableLocked = false;
-    if (this.reticle) {
-      this.reticle.material.color.setHex(0xd4af37); // Gold target indicator
-      if (this.reticle.children[0]) {
-        this.reticle.children[0].material.color.setHex(0xffe6a3);
-      }
-    }
-    return false;
-  }
-
-  toggleLockTablePosition() {
-    if (this.isTableLocked) {
-      return this.unlockTablePosition();
-    } else {
-      return this.lockTablePosition();
-    }
+    // Tap always triggers magic bloom & butterfly flourish
+    this.triggerMagicBurst();
   }
 
   // Toggle Auto 360-degree rotation

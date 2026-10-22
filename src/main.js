@@ -28,11 +28,7 @@ const tabBtnCard = document.getElementById('tab-btn-card');
 const guidanceText = document.getElementById('guidance-text');
 const bottomHud = document.getElementById('bottom-hud');
 
-// Lock & 360 Rotation Controls
-const lockTableBar = document.getElementById('lock-table-bar');
-const btnToggleLock = document.getElementById('btn-toggle-lock');
-const lockIcon = document.getElementById('lock-icon');
-const lockText = document.getElementById('lock-text');
+// 360 Rotation Controls
 const btnToggleRotate = document.getElementById('btn-toggle-rotate');
 
 // Welcome Entry Modal
@@ -90,11 +86,10 @@ async function setView(viewName) {
     tabBtnCamera?.classList.add('active');
     cardGeneratorScreen?.classList.add('hidden');
     bottomHud?.classList.remove('hidden');
-    if (lockTableBar) lockTableBar.style.display = 'flex';
 
     const success = await arScene.startCamera();
     if (success) {
-      guidanceText.textContent = '📸 Kamera Aktif • Tekan "Kunci Kedudukan" untuk melekatkannya di meja & pusing 360°!';
+      guidanceText.textContent = '✨ Cincin & Bunga terletak tetap di atas meja anda • Pusingkan telefon atau seret 360° untuk melihat setiap sudut!';
     } else {
       guidanceText.textContent = 'Mod Simulasi Meja 3D (Kamera tidak dapat diakses) • Seret 360° untuk putar!';
       arScene.virtualTable.visible = true;
@@ -103,7 +98,6 @@ async function setView(viewName) {
     tabBtnVirtual?.classList.add('active');
     cardGeneratorScreen?.classList.add('hidden');
     bottomHud?.classList.remove('hidden');
-    if (lockTableBar) lockTableBar.style.display = 'flex';
 
     arScene.stopCamera();
     arScene.virtualTable.visible = true;
@@ -112,7 +106,6 @@ async function setView(viewName) {
     tabBtnCard?.classList.add('active');
     cardGeneratorScreen?.classList.remove('hidden');
     bottomHud?.classList.add('hidden');
-    if (lockTableBar) lockTableBar.style.display = 'none';
     cardGen.renderCard();
   }
 }
@@ -135,23 +128,8 @@ btnStart3dExperience?.addEventListener('click', () => {
 });
 
 // -----------------------------------------------------------------------------
-// 4. Lock Table Location & 360-Degree Controls
+// 4. 360-Degree Controls
 // -----------------------------------------------------------------------------
-btnToggleLock?.addEventListener('click', () => {
-  const isLocked = arScene.toggleLockTablePosition();
-  if (isLocked) {
-    btnToggleLock.classList.add('locked');
-    lockIcon.textContent = '🔒';
-    lockText.textContent = 'Terkunci di Meja (Buka Kunci)';
-    guidanceText.textContent = '✨ Cincin & Bunga Terkunci di Meja! Pusingkan telefon atau seret 360° untuk lihat dari setiap sudut.';
-  } else {
-    btnToggleLock.classList.remove('locked');
-    lockIcon.textContent = '📍';
-    lockText.textContent = 'Kunci Kedudukan di Meja';
-    guidanceText.textContent = 'Halakan ke meja dan tekan "Kunci Kedudukan di Meja"';
-  }
-});
-
 btnToggleRotate?.addEventListener('click', () => {
   const isRotating = arScene.toggleAutoRotate();
   btnToggleRotate.classList.toggle('active', isRotating);
