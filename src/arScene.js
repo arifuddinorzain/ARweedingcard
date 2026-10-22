@@ -710,6 +710,19 @@ export class WeddingARScene {
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
+      if (e.touches && e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const pinchDist = Math.hypot(dx, dy);
+        if (this.initialPinchDistance) {
+          const ratio = pinchDist / this.initialPinchDistance;
+          this.currentScale = Math.max(0.35, Math.min(2.5, this.currentScale * (1 + (ratio - 1) * 0.12)));
+          this.arAnchor.scale.set(this.currentScale, this.currentScale, this.currentScale);
+        }
+        this.initialPinchDistance = pinchDist;
+        return;
+      }
+
       if (this.isCameraActive) {
         const deltaX = clientX - this.lastPointer.x;
         const deltaY = clientY - this.lastPointer.y;
@@ -724,6 +737,7 @@ export class WeddingARScene {
 
     const onPointerUp = (e) => {
       this.isDragging = false;
+      this.initialPinchDistance = null;
       const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
       const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
       const dist = Math.hypot(clientX - pointerStartX, clientY - pointerStartY);
@@ -750,12 +764,12 @@ export class WeddingARScene {
     if (active) {
       // In Camera AR mode:
       // The camera is at (0, 0, 0) tracking the real phone orientation.
-      // The 3D rings and flowers are solidly anchored in front on the table at (0, -0.65, -1.15).
+      // The 3D rings and flowers are anchored naturally on the table (further away & lower down)
       this.virtualTable.visible = false;
       this.controls.enabled = false;
       this.camera.position.set(0, 0, 0);
       this.camera.quaternion.identity();
-      this.arAnchor.position.set(0, -0.65, -1.15);
+      this.arAnchor.position.set(0, -0.95, -1.8);
       this.gyroManager.resetHeading();
     } else {
       // In Virtual 3D mode:
@@ -773,6 +787,7 @@ export class WeddingARScene {
   recenterAnchor() {
     this.gyroManager.resetHeading();
     this.manualPitch = 0;
+    this.arAnchor.position.set(0, -0.95, -1.8);
     weddingAudio.playRingShimmer();
   }
 
