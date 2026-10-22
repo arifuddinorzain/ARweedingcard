@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ms">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Magic Table AR • Meja Ajaib Perkahwinan</title>
+    <meta name="description" content="Pengalaman WebAR Meja Perkahwinan: Imbas QR di meja dan nikmati Bunga Digital Mekar, Rama-rama 3D, dan Cincin Berlian bercahaya seolah-olah berada di atas meja anda." />
+    
+    <!-- Google Fonts: Playfair Display, Cinzel, Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css">
+  </head>
+  <body>
+    <div id="app">
+      <!-- Background Video Feed for WebAR -->
+      <video id="ar-video-feed" playsinline autoplay muted></video>
+
+      <!-- Three.js 3D WebGL Canvas -->
+      <canvas id="ar-webgl-canvas"></canvas>
+
+      <!-- Top Royal Navigation Bar -->
+      <header class="top-nav-bar">
+        <div class="nav-branding">
+          <div class="gold-ring-icon">💍</div>
+          <div class="wedding-title-stack">
+            <span class="wedding-label">WALIMATULURUS</span>
+            <h1 class="couple-heading" id="header-couple-name">Arif & Haziqah</h1>
+          </div>
+        </div>
+
+        <div class="nav-right-actions">
+          <div class="table-pill" id="header-table-badge">
+            <span class="dot-online"></span>
+            <span id="badge-table-text">Meja 07</span>
+          </div>
+
+          <button id="btn-toggle-music" class="icon-nav-btn" title="Pasang / Henti Muzik Romantik">
+            <span id="music-icon">🎵</span>
+          </button>
+
+          <button id="btn-toggle-generator" class="btn-gold-outline" title="Buka Penjana Kad Meja & QR">
+            🖨️ Kad Meja
+          </button>
+        </div>
+      </header>
+
+      <!-- Experience Mode Selector Tab -->
+      <div class="mode-tabs-container">
+        <div class="mode-pill-selector">
+          <button class="mode-pill-btn active" data-view="virtual-3d" id="tab-btn-virtual">
+            🥂 Simulasi Meja 3D
+          </button>
+          <button class="mode-pill-btn" data-view="ar-camera" id="tab-btn-camera">
+            📸 Kamera AR
+          </button>
+          <button class="mode-pill-btn" data-view="table-card" id="tab-btn-card">
+            🖨️ Penjana QR
+          </button>
+        </div>
+      </div>
+
+      <!-- AR Placement Hint Tooltip Banner -->
+      <div class="ar-guidance-banner" id="ar-guidance">
+        <div class="guidance-content">
+          <span class="guidance-icon">✨</span>
+          <span class="guidance-text" id="guidance-text">Halakan kamera ke meja anda • Sentuh skrin untuk mekar & lepaskan rama-rama</span>
+        </div>
+      </div>
+
+      <!-- Bottom Floating Controls (HUD) -->
+      <nav class="bottom-hud-bar" id="bottom-hud">
+        <!-- Quick Element Filter -->
+        <div class="filter-chips-row">
+          <button class="filter-chip active" data-mode="all">Semua Magis</button>
+          <button class="filter-chip" data-mode="flowers">🌸 Bunga</button>
+          <button class="filter-chip" data-mode="rings">💍 Cincin</button>
+          <button class="filter-chip" data-mode="butterflies">🦋 Rama-Rama</button>
+        </div>
+
+        <!-- Main Action Buttons -->
+        <div class="hud-action-grid">
+          <button class="hud-circle-btn" id="btn-rebloom" title="Mekar Semula Bunga">
+            <span class="hud-icon">🌸</span>
+            <span class="hud-text">Mekar</span>
+          </button>
+
+          <button class="hud-primary-snap" id="btn-take-snapshot" title="Tangkap Gambar Kenangan AR">
+            <div class="snap-ring-outer">
+              <div class="snap-ring-inner">
+                <span class="snap-icon">📸</span>
+              </div>
+            </div>
+            <span class="snap-label">GAMBAR AR</span>
+          </button>
+
+          <button class="hud-circle-btn" id="btn-open-wishes" title="Buku Ucapan Tetamu">
+            <span class="hud-icon">💌</span>
+            <span class="hud-text">Ucapan</span>
+          </button>
+        </div>
+      </nav>
+
+      <!-- Printable Card Generator Screen Container (Toggled via Tab) -->
+      <div class="generator-overlay-container hidden" id="card-generator-screen">
+        <div id="generator-mount-point"></div>
+      </div>
+
+      <!-- Modal: Guest Wishing Wall (Buku Ucapan Pengantin) -->
+      <div class="modal-backdrop hidden" id="wishing-modal">
+        <div class="modal-sheet glass-card">
+          <div class="modal-handle-bar"></div>
+          <div class="modal-header">
+            <div class="modal-title-wrap">
+              <span class="modal-badge">💌 BUKU TETAMU DIGITAL</span>
+              <h2>Titipkan Ucapan & Doa</h2>
+              <p>Ucapan anda akan dipaparkan dan diraikan bersama pengantin.</p>
+            </div>
+            <button class="btn-close-modal" id="btn-close-wishes">✕</button>
+          </div>
+
+          <!-- New Wish Form -->
+          <form class="wish-form" id="form-new-wish">
+            <div class="form-row">
+              <input type="text" id="input-wish-name" placeholder="Nama Anda / Keluarga" required />
+              <input type="text" id="input-wish-table" placeholder="Nombor Meja (cth: Meja 07)" value="Meja 07" />
+            </div>
+            <textarea id="input-wish-msg" rows="3" placeholder="Tuliskan ucapan tahniah atau doa restu untuk pasangan raja sehari..." required></textarea>
+            
+            <!-- Quick Preset Wish Chips -->
+            <div class="preset-chips-row">
+              <button type="button" class="preset-chip">Barakallahu lakuma ✨</button>
+              <button type="button" class="preset-chip">Semoga kekal hingga ke Jannah 🤍</button>
+              <button type="button" class="preset-chip">Selamat Pengantin Baru bro! 💍</button>
+            </div>
+
+            <button type="submit" class="btn-primary-gold w-100">
+              💌 Hantar Ucapan & Doa Restu
+            </button>
+          </form>
+
+          <!-- Wishes Stream List -->
+          <div class="wishes-list-wrapper">
+            <h3>✨ Ucapan Dari Tetamu Lain</h3>
+            <div class="wishes-stream" id="wishes-stream-container">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Photo Snapshot Preview & Share -->
+      <div class="modal-backdrop hidden" id="snapshot-modal">
+        <div class="modal-sheet glass-card snapshot-sheet">
+          <div class="modal-header">
+            <div class="modal-title-wrap">
+              <span class="modal-badge">✨ KENANGAN MEJA AJAIB</span>
+              <h2>Foto Magic Table AR Anda</h2>
+            </div>
+            <button class="btn-close-modal" id="btn-close-snap">✕</button>
+          </div>
+
+          <div class="snapshot-preview-box">
+            <img id="snapshot-preview-img" src="" alt="AR Snapshot" />
+          </div>
+
+          <div class="snapshot-actions-row">
+            <a id="btn-download-snap" class="btn-primary-gold flex-1" download="Magic-Table-AR-Memory.png">
+              📥 Muat Turun Foto
+            </a>
+            <button id="btn-share-snap" class="btn-secondary-emerald flex-1">
+              📲 Kongsi (WhatsApp / Story)
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

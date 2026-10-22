@@ -1,0 +1,19 @@
+{
+  "name": "arkadkawin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.4.11"
+  },
+  "dependencies": {
+    "three": "^0.170.0",
+    "canvas-confetti": "^1.9.4",
+    "qrcode": "^1.5.4"
+  }
+}
