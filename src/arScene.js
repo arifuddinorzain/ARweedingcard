@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import jsQR from 'jsqr';
 import { weddingAudio } from './audio.js';
 
 // Real-world Device Orientation / Gyroscope Manager
@@ -147,6 +148,16 @@ export class WeddingARScene {
     
     // Scene mode toggles
     this.mode = 'all'; // 'all', 'flowers', 'rings', 'butterflies'
+
+    // Real-time QR Code Tracking & Anchoring directly on table
+    this.hasLockedQR = false;
+    this.lastQrScanTime = 0;
+    this.qrCanvas = document.createElement('canvas');
+    this.qrCtx = this.qrCanvas.getContext('2d', { willReadFrequently: true });
+    this.onQrDetected = null;
+    this.onQrLost = null;
+    this.detectedQrCorners = null;
+    this.lastKnownTablePos = new THREE.Vector3(0, -0.95, -1.8);
 
     this.initScene();
   }
@@ -769,7 +780,9 @@ export class WeddingARScene {
       this.controls.enabled = false;
       this.camera.position.set(0, 0, 0);
       this.camera.quaternion.identity();
-      this.arAnchor.position.set(0, -0.95, -1.8);
+      if (!this.hasLockedQR) {
+        this.arAnchor.position.set(0, -0.95, -1.8);
+      }
       this.gyroManager.resetHeading();
     } else {
       // In Virtual 3D mode:
@@ -783,12 +796,133 @@ export class WeddingARScene {
     }
   }
 
-  // Re-center Anchor directly in front of current phone orientation
+  // Re-center Anchor or re-arm QR detection
   recenterAnchor() {
     this.gyroManager.resetHeading();
     this.manualPitch = 0;
+    this.hasLockedQR = false; // re-arm to lock onto whatever QR is scanned next!
     this.arAnchor.position.set(0, -0.95, -1.8);
     weddingAudio.playRingShimmer();
+  }
+
+  // Real-time QR Code Tracking & World Anchoring
+  processQrCodeTracking() {
+    if (!this.isCameraActive || !this.video || this.video.readyState < 2) return;
+
+    const now = performance.now();
+    // Scan every 100ms (~10 fps scan rate) - ultra responsive with zero frame drop for 60fps WebGL
+    if (now - this.lastQrScanTime < 100) return;
+    this.lastQrScanTime = now;
+
+    const vW = this.video.videoWidth;
+    const vH = this.video.videoHeight;
+    if (!vW || !vH) return;
+
+    // Downscale for fast CPU decoding
+    const scanW = 400;
+    const scanH = Math.round(scanW * (vH / vW));
+    if (this.qrCanvas.width !== scanW || this.qrCanvas.height !== scanH) {
+      this.qrCanvas.width = scanW;
+      this.qrCanvas.height = scanH;
+    }
+
+    this.qrCtx.drawImage(this.video, 0, 0, scanW, scanH);
+    const imageData = this.qrCtx.getImageData(0, 0, scanW, scanH);
+    const code = jsQR(imageData.data, scanW, scanH, { inversionAttempts: 'dontInvert' });
+
+    if (code && code.location) {
+      const { topLeftCorner: tl, topRightCorner: tr, bottomRightCorner: br, bottomLeftCorner: bl } = code.location;
+
+      // Center point in scan canvas coordinates
+      const scanCenterX = (tl.x + tr.x + br.x + bl.x) / 4;
+      const scanCenterY = (tl.y + tr.y + br.y + bl.y) / 4;
+
+      // Scale to full video coordinates
+      const scaleVideo = vW / scanW;
+      const vCenterX = scanCenterX * scaleVideo;
+      const vCenterY = scanCenterY * scaleVideo;
+
+      // Map to screen coordinates (accounting for CSS object-fit: cover on video)
+      const sW = window.innerWidth;
+      const sH = window.innerHeight;
+      const fitScale = Math.max(sW / vW, sH / vH);
+      const displayedW = vW * fitScale;
+      const displayedH = vH * fitScale;
+      const offsetX = (sW - displayedW) / 2;
+      const offsetY = (sH - displayedH) / 2;
+
+      const screenCenterX = vCenterX * fitScale + offsetX;
+      const screenCenterY = vCenterY * fitScale + offsetY;
+
+      // Normalized Device Coordinates (NDC) in range [-1, 1]
+      const ndcX = (screenCenterX / sW) * 2 - 1;
+      const ndcY = -(screenCenterY / sH) * 2 + 1;
+
+      // Calculate apparent pixel size of the QR code in screen pixels
+      const d1 = Math.hypot(tr.x - tl.x, tr.y - tl.y);
+      const d2 = Math.hypot(br.x - bl.x, br.y - bl.y);
+      const d3 = Math.hypot(bl.x - tl.x, bl.y - tl.y);
+      const d4 = Math.hypot(br.x - tr.x, br.y - tr.y);
+      const avgSideScan = (d1 + d2 + d3 + d4) / 4;
+      const qrSizeScreenPx = avgSideScan * scaleVideo * fitScale;
+
+      // Estimate distance D based on perspective camera FOV
+      // Physical QR code on wedding tent card is approx 0.08m (8cm)
+      const fovRad = THREE.MathUtils.degToRad(this.camera.fov);
+      const estimatedDist = (0.08 * sH) / (2 * Math.max(qrSizeScreenPx, 30) * Math.tan(fovRad / 2));
+      const clampedDist = THREE.MathUtils.clamp(estimatedDist, 0.45, 1.8);
+
+      // Unproject ray from camera position into world coordinates
+      const rayTarget = new THREE.Vector3(ndcX, ndcY, 0.5);
+      rayTarget.unproject(this.camera);
+      const rayDir = rayTarget.sub(this.camera.position).normalize();
+
+      // Calculated 3D world position where the QR code sits on the table
+      const detectedWorldPos = this.camera.position.clone().add(rayDir.multiplyScalar(clampedDist));
+      this.lastKnownTablePos.copy(detectedWorldPos);
+
+      // Save 2D screen bounding box for scanner reticle
+      this.detectedQrCorners = {
+        screenX: screenCenterX,
+        screenY: screenCenterY,
+        width: qrSizeScreenPx,
+        height: qrSizeScreenPx
+      };
+
+      if (!this.hasLockedQR) {
+        // First lock: snap immediately onto QR position and trigger celebration
+        this.hasLockedQR = true;
+        this.arAnchor.position.copy(detectedWorldPos);
+        this.playOpeningAnimation();
+        weddingAudio.playRingShimmer();
+
+        if (this.onQrDetected) {
+          this.onQrDetected({
+            firstLock: true,
+            data: code.data,
+            position: detectedWorldPos
+          });
+        }
+      } else {
+        // Continuous tracking: smoothly lerp to follow card or reduce slight camera tremor
+        this.arAnchor.position.lerp(detectedWorldPos, 0.16);
+
+        if (this.onQrDetected) {
+          this.onQrDetected({
+            firstLock: false,
+            data: code.data,
+            position: detectedWorldPos
+          });
+        }
+      }
+    } else {
+      // When QR is out of frame, the anchor remains firmly anchored at this.lastKnownTablePos!
+      // This allows guests to look 360° around without the 3D model jumping away!
+      this.detectedQrCorners = null;
+      if (this.onQrLost && this.hasLockedQR) {
+        this.onQrLost();
+      }
+    }
   }
 
   // Toggle Auto 360-degree rotation
@@ -1004,7 +1138,7 @@ export class WeddingARScene {
     const delta = this.clock.getDelta();
     const time = this.clock.getElapsedTime();
 
-    // 0. Update Camera Orientation
+    // 0. Update Camera Orientation & Real-time QR Tracking
     if (this.isCameraActive) {
       if (this.isAutoSpinningAR) {
         this.gyroManager.userYawOffset += delta * 0.8;
@@ -1016,6 +1150,9 @@ export class WeddingARScene {
         const euler = new THREE.Euler(this.manualPitch, this.gyroManager.userYawOffset, 0, 'YXZ');
         this.camera.quaternion.setFromEuler(euler);
       }
+
+      // Track QR code position on the table in real-time
+      this.processQrCodeTracking();
     } else {
       if (this.controls) {
         this.controls.update();
