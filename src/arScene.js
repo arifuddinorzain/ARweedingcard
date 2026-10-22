@@ -478,13 +478,13 @@ export class WeddingARScene {
     this.arAnchor.add(this.flowerGroup);
   }
 
-  // 3D Interlinked Champagne Gold & Platinum Diamond Wedding Rings
+  // 3D Interlinked Champagne Gold & Platinum Diamond Wedding Rings (Life-Size 80% Smaller)
   buildTwinWeddingRings() {
     this.ringGroup = new THREE.Group();
-    this.ringGroup.position.set(0, 0.32, 0);
+    this.ringGroup.position.set(0, 0.285, 0);
 
-    // Delicate Groom Ring (Champagne Gold)
-    const groomRingGeo = new THREE.TorusGeometry(0.058, 0.009, 32, 64);
+    // Life-size Groom Ring (Champagne Gold ~2.4cm diameter, 1.8mm thickness)
+    const groomRingGeo = new THREE.TorusGeometry(0.012, 0.0018, 32, 64);
     const goldBandMat = new THREE.MeshStandardMaterial({
       color: 0xffd27d,
       metalness: 0.95,
@@ -496,8 +496,8 @@ export class WeddingARScene {
     groomRing.castShadow = true;
     this.ringGroup.add(groomRing);
 
-    // Delicate Bride Ring (Platinum & Diamond Solitaire)
-    const brideRingGeo = new THREE.TorusGeometry(0.050, 0.007, 32, 64);
+    // Life-size Bride Ring (Platinum & Diamond Solitaire ~2.0cm diameter, 1.4mm thickness)
+    const brideRingGeo = new THREE.TorusGeometry(0.010, 0.0014, 32, 64);
     const platinumBandMat = new THREE.MeshStandardMaterial({
       color: 0xf5f5f5,
       metalness: 0.98,
@@ -506,30 +506,30 @@ export class WeddingARScene {
     const brideRing = new THREE.Mesh(brideRingGeo, platinumBandMat);
     brideRing.rotation.x = Math.PI / 4;
     brideRing.rotation.y = -0.55;
-    brideRing.position.set(0.022, 0.015, 0);
+    brideRing.position.set(0.0045, 0.003, 0);
     brideRing.castShadow = true;
 
     // Diamond setting crown
-    const crownGeo = new THREE.CylinderGeometry(0.013, 0.008, 0.012, 6);
+    const crownGeo = new THREE.CylinderGeometry(0.0026, 0.0016, 0.0024, 6);
     const crown = new THREE.Mesh(crownGeo, platinumBandMat);
-    crown.position.set(0, 0.054, 0);
+    crown.position.set(0, 0.011, 0);
     brideRing.add(crown);
 
     // Solitaire Brilliant Diamond
-    const diamondGeo = new THREE.OctahedronGeometry(0.018, 1);
+    const diamondGeo = new THREE.OctahedronGeometry(0.0038, 1);
     const diamondMat = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
       metalness: 0.05,
       roughness: 0.0,
       transmission: 0.95,
       ior: 2.42,
-      thickness: 0.04,
+      thickness: 0.01,
       specularIntensity: 2.0,
       transparent: true,
       opacity: 0.95
     });
     this.diamond = new THREE.Mesh(diamondGeo, diamondMat);
-    this.diamond.position.set(0, 0.064, 0);
+    this.diamond.position.set(0, 0.013, 0);
     this.diamond.scale.set(1, 1.4, 1);
     brideRing.add(this.diamond);
 
@@ -553,7 +553,7 @@ export class WeddingARScene {
       blending: THREE.AdditiveBlending
     });
     this.diamondGlint = new THREE.Sprite(glintMat);
-    this.diamondGlint.scale.set(0.08, 0.08, 1);
+    this.diamondGlint.scale.set(0.02, 0.02, 1);
     this.diamond.add(this.diamondGlint);
 
     this.ringGroup.add(brideRing);
@@ -876,7 +876,7 @@ export class WeddingARScene {
 
     if (this.ringGroup) {
       this.ringGroup.scale.set(0.01, 0.01, 0.01);
-      this.ringGroup.position.y = 0.65;
+      this.ringGroup.position.y = 0.45;
 
       const startTime = performance.now();
       const duration = 1200;
@@ -891,12 +891,12 @@ export class WeddingARScene {
 
         const curScale = Math.max(0.01, ease);
         this.ringGroup.scale.set(curScale, curScale, curScale);
-        this.ringGroup.position.y = 0.65 - ease * 0.33;
+        this.ringGroup.position.y = 0.45 - ease * 0.165;
 
         if (progress < 1.0) {
           requestAnimationFrame(animateDrop);
         } else {
-          this.ringGroup.position.y = 0.32;
+          this.ringGroup.position.y = 0.285;
           this.ringGroup.scale.set(1, 1, 1);
         }
       };
@@ -918,9 +918,9 @@ export class WeddingARScene {
     }, 1200);
 
     if (this.ringGroup) {
-      this.ringGroup.position.y += 0.03;
+      this.ringGroup.position.y += 0.015;
       setTimeout(() => {
-        if (this.ringGroup) this.ringGroup.position.y = 0.32;
+        if (this.ringGroup) this.ringGroup.position.y = 0.285;
       }, 500);
     }
   }
@@ -1106,11 +1106,11 @@ export class WeddingARScene {
 
     // 2. Twin Wedding Rings Hover & Sparkle Rotation
     if (this.ringGroup) {
-      this.ringGroup.position.y = 0.32 + Math.sin(time * 1.8) * 0.015;
+      this.ringGroup.position.y = 0.285 + Math.sin(time * 1.8) * 0.005;
       this.ringGroup.rotation.y = time * 0.45;
 
       if (this.diamondGlint) {
-        const glintScale = 0.08 + Math.sin(time * 6) * 0.03;
+        const glintScale = 0.02 + Math.sin(time * 6) * 0.007;
         this.diamondGlint.scale.set(glintScale, glintScale, 1);
         if (this.diamondGlint.material) {
           this.diamondGlint.material.rotation = time * 1.5;
