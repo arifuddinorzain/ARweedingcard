@@ -124,6 +124,9 @@ async function setView(viewName) {
   [tabBtnCamera, tabBtnVirtual, tabBtnCard].forEach(btn => btn?.classList.remove('active'));
 
   if (viewName === 'ar-camera') {
+    document.body.classList.add('ar-camera-active');
+    document.getElementById('app')?.classList.add('ar-camera-active');
+
     tabBtnCamera?.classList.add('active');
     cardGeneratorScreen?.classList.add('hidden');
     bottomHud?.classList.remove('hidden');
@@ -133,6 +136,9 @@ async function setView(viewName) {
     guidanceText.textContent = '📸 Halakan kamera ke arah gambar pengantin untuk saksikan gambar bergerak!';
     if (scannerStatusText) scannerStatusText.textContent = 'Mengesan Foto Pengantin Pada Kad...';
 
+    // Prepare arScene: hides virtual table, 3D card mesh, and contact shadow
+    arScene.setCameraARMode(true);
+
     // 1. Start MindAR true computer vision image tracking (Stories AR Experience)
     let mindarStarted = false;
     try {
@@ -141,11 +147,19 @@ async function setView(viewName) {
       console.warn('[MindAR] direct start deferred:', e);
     }
 
-    if (!mindarStarted) {
-      // 2. Fallback to Three.js camera AR view
+    if (mindarStarted) {
+      // Hide fallback Three.js canvas so MindAR full-screen image target camera runs cleanly
+      if (canvas) canvas.classList.add('hidden');
+    } else {
+      // Fallback: Three.js transparent overlay + camera feed
+      if (canvas) canvas.classList.remove('hidden');
       await arScene.startCamera();
     }
   } else if (viewName === 'virtual-3d') {
+    document.body.classList.remove('ar-camera-active');
+    document.getElementById('app')?.classList.remove('ar-camera-active');
+    if (canvas) canvas.classList.remove('hidden');
+
     tabBtnVirtual?.classList.add('active');
     cardGeneratorScreen?.classList.add('hidden');
     bottomHud?.classList.remove('hidden');
@@ -153,8 +167,13 @@ async function setView(viewName) {
 
     mindarCtrl.stop();
     arScene.stopCamera();
+    arScene.setCameraARMode(false);
     guidanceText.textContent = '🥂 Simulasi Kad 3D • Sentuh foto pengantin untuk melihat foto hidup & terapung!';
   } else if (viewName === 'table-card') {
+    document.body.classList.remove('ar-camera-active');
+    document.getElementById('app')?.classList.remove('ar-camera-active');
+    if (canvas) canvas.classList.add('hidden');
+
     tabBtnCard?.classList.add('active');
     cardGeneratorScreen?.classList.remove('hidden');
     bottomHud?.classList.add('hidden');
@@ -162,6 +181,7 @@ async function setView(viewName) {
 
     mindarCtrl.stop();
     arScene.stopCamera();
+    arScene.setCameraARMode(false);
     cardGen.renderCard();
   }
 }
@@ -369,6 +389,7 @@ tabBtnCamera?.addEventListener('click', async () => {
 tabBtnVirtual?.addEventListener('click', () => setView('virtual-3d'));
 tabBtnCard?.addEventListener('click', () => setView('table-card'));
 btnToggleGenerator?.addEventListener('click', () => setView('table-card'));
+btnExitAr?.addEventListener('click', () => setView('virtual-3d'));
 
 window.addEventListener('switch-to-ar', (e) => {
   if (e.detail) {

@@ -849,20 +849,67 @@ export class WeddingARScene {
   setCameraARMode(active) {
     this.isCameraActive = active;
     if (active) {
-      this.virtualTable.visible = false;
-      // Tilt card upright facing the user's camera viewfinder:
-      if (this.arAnchor) {
-        this.arAnchor.rotation.x = -Math.PI / 4.8;
+      // 1. Remove green background & banquet table (buang background hijau dan meja)
+      if (this.virtualTable) this.virtualTable.visible = false;
+
+      // 2. Remove physical 3D paper card & shadow (buang kad fizikal 3D di skrin kamera)
+      if (this.cardMesh) this.cardMesh.visible = false;
+      if (this.magnetShadowMesh) this.magnetShadowMesh.visible = false;
+
+      // 3. Set transparent WebGL clear color so real camera feed shows through 100%
+      if (this.renderer) {
+        this.renderer.setClearColor(0x000000, 0);
       }
-      this.camera.position.set(0, 0.42, 0.95);
-      this.camera.lookAt(0, 0.08, 0);
+
+      // 4. Orient the living moving photo upright and facing camera
+      if (this.arAnchor) {
+        this.arAnchor.position.set(0, 0, 0);
+        this.arAnchor.rotation.set(0, 0, 0);
+      }
+      if (this.arMagnetGroup) {
+        this.arMagnetGroup.position.set(0, 0, 0);
+        this.arMagnetGroup.rotation.set(Math.PI / 2, 0, 0);
+      }
+      if (this.topBanner) {
+        this.topBanner.position.set(0, 0.22, 0.01);
+        this.topBanner.rotation.set(0, 0, 0);
+      }
+      if (this.btmPlaque) {
+        this.btmPlaque.position.set(0, -0.22, 0.01);
+        this.btmPlaque.rotation.set(0, 0, 0);
+      }
+
+      this.camera.position.set(0, 0, 1.05);
+      this.camera.lookAt(0, 0, 0);
+
       if (this.controls) this.controls.enabled = false;
       this.gyroManager.startListening();
     } else {
+      // Restore tabletop 3D simulation
+      if (this.virtualTable) this.virtualTable.visible = true;
+      if (this.cardMesh) this.cardMesh.visible = true;
+      if (this.magnetShadowMesh) this.magnetShadowMesh.visible = true;
+
       if (this.arAnchor) {
-        this.arAnchor.rotation.x = 0;
+        this.arAnchor.position.set(0, 0, 0);
+        this.arAnchor.rotation.set(0, 0, 0);
       }
-      this.virtualTable.visible = true;
+      if (this.arMagnetGroup) {
+        this.arMagnetGroup.position.set(0, 0.045, -0.065);
+        this.arMagnetGroup.rotation.set(0, 0, 0);
+      }
+      if (this.topBanner) {
+        this.topBanner.position.set(0, 0.09, -0.22);
+        this.topBanner.rotation.set(-Math.PI / 6, 0, 0);
+      }
+      if (this.btmPlaque) {
+        this.btmPlaque.position.set(0, 0.08, 0.085);
+        this.btmPlaque.rotation.set(-Math.PI / 8, 0, 0);
+      }
+
+      this.camera.position.set(0, 0.78, 1.25);
+      this.camera.lookAt(0, 0.22, 0);
+
       if (this.controls) this.controls.enabled = true;
       this.gyroManager.stopListening();
     }
@@ -870,9 +917,15 @@ export class WeddingARScene {
 
   async startCamera() {
     try {
-      this.video.setAttribute('playsinline', '');
-      this.video.setAttribute('webkit-playsinline', '');
-      this.video.muted = true;
+      if (!this.video) {
+        this.video = document.getElementById('ar-video-feed');
+      }
+      if (this.video) {
+        this.video.classList.remove('hidden');
+        this.video.setAttribute('playsinline', '');
+        this.video.setAttribute('webkit-playsinline', '');
+        this.video.muted = true;
+      }
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('getUserMedia not supported on this origin');
@@ -895,8 +948,10 @@ export class WeddingARScene {
         });
       }
 
-      this.video.srcObject = stream;
-      await this.video.play();
+      if (this.video) {
+        this.video.srcObject = stream;
+        await this.video.play();
+      }
       
       this.setCameraARMode(true);
       return true;
@@ -912,6 +967,7 @@ export class WeddingARScene {
       const tracks = this.video.srcObject.getTracks();
       tracks.forEach(track => track.stop());
       this.video.srcObject = null;
+      this.video.classList.add('hidden');
     }
     this.setCameraARMode(false);
   }

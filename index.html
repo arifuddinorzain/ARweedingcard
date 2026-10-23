@@ -75,35 +75,26 @@
         </a-scene>
       </div>
 
+      <!-- Camera Video Feed for Fallback WebAR -->
+      <video id="ar-video-feed" playsinline webkit-playsinline muted autoplay class="hidden"></video>
+
       <!-- Fallback Three.js 3D WebGL Canvas for 3D card preview -->
       <canvas id="ar-webgl-canvas"></canvas>
 
-      <!-- Camera AR Card Scanner Viewfinder HUD -->
+      <!-- Camera AR Card Scanner Viewfinder HUD (Clean Stories AR Style) -->
       <div class="ar-scanner-overlay hidden" id="ar-scanner-overlay">
         <div class="scanner-reticle-box">
           <div class="corner-bracket top-left"></div>
           <div class="corner-bracket top-right"></div>
           <div class="corner-bracket bottom-left"></div>
           <div class="corner-bracket bottom-right"></div>
-          
-          <!-- Animated Scanning Laser Line -->
           <div class="scanner-laser-line"></div>
-
-          <!-- Center Target Helper -->
-          <div class="target-center-guide">
-            <span class="target-icon">📸</span>
-            <span class="target-label">Halakan Ke Gambar Pengantin</span>
-          </div>
         </div>
 
-        <div class="scanner-status-pill" id="scanner-status-pill">
+        <div class="scanner-status-pill hidden" id="scanner-status-pill">
           <span class="scanner-dot"></span>
           <span id="scanner-status-text">Mengesan Foto Pengantin Pada Kad...</span>
         </div>
-
-        <button class="btn-snap-lock" id="btn-snap-lock" title="Kunci Posisi & Gerakkan Gambar">
-          ✨ Kunci Posisi & Gerakkan Gambar ✨
-        </button>
       </div>
 
       <!-- Top Navigation Bar -->
@@ -134,8 +125,8 @@
         </div>
       </header>
 
-      <!-- Experience Mode Selector Tab -->
-      <div class="mode-tabs-container">
+      <!-- Experience Mode Selector Tab (Hidden in Camera AR Mode) -->
+      <div class="mode-tabs-container" id="mode-tabs-container">
         <div class="mode-pill-selector">
           <button class="mode-pill-btn active" data-view="virtual-3d" id="tab-btn-virtual">
             🥂 Simulasi Kad 3D
@@ -150,7 +141,7 @@
       </div>
 
       <!-- AR Guidance Tooltip Banner -->
-      <div class="ar-guidance-banner" id="ar-guidance">
+      <div class="ar-guidance-banner hidden" id="ar-guidance">
         <div class="guidance-content">
           <span class="guidance-icon">✨</span>
           <span class="guidance-text" id="guidance-text">Halakan kamera telefon ke gambar pengantin di kad untuk melihat gambar ini bergerak!</span>
@@ -159,28 +150,7 @@
 
       <!-- Bottom Floating Controls (HUD) -->
       <nav class="bottom-hud-bar" id="bottom-hud">
-        <div class="filter-chips-row">
-          <button class="filter-chip active" data-theme="gold">👑 Emas Diraja</button>
-          <button class="filter-chip" data-theme="cyan">💎 Kristal Maya</button>
-          <button class="filter-chip" data-theme="ruby">🌹 Delima Songket</button>
-          <button class="filter-chip" id="btn-voice-greeting" title="Dengarkan Ucapan Pengantin">🔊 Ucapan Suara</button>
-          <button class="filter-chip" id="btn-toggle-rotate" title="Pusing 360° Automatik">🔄 360° Putar</button>
-          <button class="filter-chip" id="btn-recenter-anchor" title="Letakkan Semula Di Hadapan Anda">🎯 Reset Posisi</button>
-        </div>
-
         <div class="hud-action-grid">
-          <!-- Pause / Play Animation Toggle -->
-          <button class="hud-circle-btn" id="btn-toggle-pause" title="Jeda atau Mainkan Gambar Bergerak">
-            <span class="hud-icon" id="pause-icon">⏸</span>
-            <span class="hud-text" id="pause-text">Jeda</span>
-          </button>
-
-          <!-- Tap to Interact Button -->
-          <button class="hud-circle-btn" id="btn-tap-interact" title="Sentuh Untuk Berinteraksi">
-            <span class="hud-icon">👆</span>
-            <span class="hud-text">Interaksi</span>
-          </button>
-
           <!-- Primary Snapshot Shutter Button -->
           <button class="hud-primary-snap" id="btn-take-snapshot" title="Tangkap Foto Bersama Gambar Bergerak">
             <div class="snap-ring-outer">

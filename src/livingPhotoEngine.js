@@ -50,6 +50,9 @@ export class LivingPhotoEngine {
         alpha: 0.4 + Math.random() * 0.5
       });
     }
+
+    // Frame update hook for WebGL / A-Frame texture update
+    this.onFrame = null;
   }
 
   setCustomVideo(videoElement) {
@@ -193,6 +196,10 @@ export class LivingPhotoEngine {
       ctx.fillRect(0, 0, w, h);
 
       ctx.restore();
+    }
+
+    if (typeof this.onFrame === 'function') {
+      this.onFrame();
     }
 
     this.animId = requestAnimationFrame(this.loop);

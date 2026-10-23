@@ -66,29 +66,76 @@ html, body {
   overflow: hidden;
 }
 
+/* ==========================================================================
+   Clean Fullscreen AR Camera Mode (Stories AR Style)
+   Removes green background, 3D table, and all clutter
+   ========================================================================== */
+body.ar-camera-active,
+#app.ar-camera-active {
+  background: transparent !important;
+  background-color: #000000 !important;
+}
+
+body.ar-camera-active .mode-tabs-container,
+body.ar-camera-active #btn-toggle-generator,
+body.ar-camera-active .table-pill,
+body.ar-camera-active #ar-guidance {
+  display: none !important;
+}
+
+/* MindAR Computer Vision A-Frame Container */
+#mindar-scene-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#mindar-scene-container.hidden {
+  display: none !important;
+}
+
+#mindar-scene-container a-scene {
+  width: 100vw;
+  height: 100vh;
+  pointer-events: auto;
+}
+
 /* --------------------------------------------------------------------------
    AR Camera Video & WebGL Canvas Layering
    -------------------------------------------------------------------------- */
 #ar-video-feed {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   object-fit: cover;
-  z-index: 1;
-  display: block;
+  z-index: 0;
+}
+
+#ar-video-feed.hidden {
+  display: none !important;
 }
 
 #ar-webgl-canvas {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   z-index: 2;
   touch-action: none;
   cursor: grab;
+  background: transparent !important;
+}
+
+#ar-webgl-canvas.hidden {
+  display: none !important;
 }
 
 #ar-webgl-canvas:active {
@@ -119,13 +166,14 @@ html, body {
 
 .scanner-reticle-box {
   position: relative;
-  width: min(78vw, 320px);
-  height: min(105vw, 430px);
-  border: 1px solid rgba(212, 175, 55, 0.25);
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.45);
+  width: min(84vw, 340px);
+  height: min(112vw, 450px);
+  border: none;
+  box-shadow: none;
   border-radius: 16px;
   overflow: hidden;
-  backdrop-filter: blur(1px);
+  backdrop-filter: none;
+  background: transparent;
 }
 
 /* 4 Glowing Gold Corner Brackets */

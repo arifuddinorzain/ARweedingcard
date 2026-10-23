@@ -28,27 +28,30 @@ export class MindARController {
   }
 
   initTextureCanvases() {
-    // Generate and attach 3D floating banners
+    // Generate and attach 3D floating banners via standard data URLs
     const bannerCanvas = LivingPhotoEngine.createBannerCanvas('SELAMAT PENGANTIN BAHARU');
+    const bannerUrl = bannerCanvas.toDataURL('image/png');
+
     const namesCanvas = LivingPhotoEngine.createNamesCanvas(this.coupleName);
+    const namesUrl = namesCanvas.toDataURL('image/png');
 
     if (this.bannerPlaneEl) {
-      this.bannerPlaneEl.setAttribute('material', {
-        src: bannerCanvas,
-        shader: 'flat',
-        transparent: true,
-        opacity: 0.96
-      });
+      this.bannerPlaneEl.setAttribute('material', `src: url(${bannerUrl}); shader: flat; transparent: true; opacity: 0.98;`);
     }
 
     if (this.namesPlaneEl) {
-      this.namesPlaneEl.setAttribute('material', {
-        src: namesCanvas,
-        shader: 'flat',
-        transparent: true,
-        opacity: 0.96
-      });
+      this.namesPlaneEl.setAttribute('material', `src: url(${namesUrl}); shader: flat; transparent: true; opacity: 0.98;`);
     }
+
+    // Connect living engine frame update to A-Frame mesh texture
+    this.livingEngine.onFrame = () => {
+      if (this.livingPlaneEl) {
+        const mesh = this.livingPlaneEl.getObject3D('mesh');
+        if (mesh && mesh.material && mesh.material.map) {
+          mesh.material.map.needsUpdate = true;
+        }
+      }
+    };
   }
 
   setupListeners() {
