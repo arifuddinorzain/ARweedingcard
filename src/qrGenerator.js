@@ -16,7 +16,12 @@ export class TableCardGenerator {
 
   // Generates the current live WebAR URL for this specific table / wedding
   generateTableUrl(autoScan = true) {
-    const baseUrl = window.location.origin + window.location.pathname;
+    let origin = window.location.origin;
+    // When testing locally on PC, substitute the PC's Wi-Fi network IP so mobile phone can connect
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      origin = `${window.location.protocol}//192.168.0.38:${window.location.port || '5173'}`;
+    }
+    const baseUrl = origin + window.location.pathname;
     const params = new URLSearchParams({
       couple: this.currentData.coupleName,
       table: this.currentData.tableNumber,
