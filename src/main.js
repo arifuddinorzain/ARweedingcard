@@ -6,7 +6,7 @@ import { weddingAudio } from './audio.js';
 // Application State
 const appState = {
   currentView: 'virtual-3d', // 'ar-camera', 'virtual-3d', 'table-card'
-  filterMode: 'all',        // 'all', 'flowers', 'rings', 'butterflies'
+  currentTheme: 'gold',      // 'gold', 'cyan', 'ruby'
   isMusicPlaying: false,
   weddingInfo: TableCardGenerator.parseUrlParams()
 };
@@ -28,8 +28,15 @@ const tabBtnCard = document.getElementById('tab-btn-card');
 const guidanceText = document.getElementById('guidance-text');
 const bottomHud = document.getElementById('bottom-hud');
 
-// 360 Rotation Controls
+// Scanner Overlay
+const arScannerOverlay = document.getElementById('ar-scanner-overlay');
+const scannerStatusText = document.getElementById('scanner-status-text');
+const btnSnapLock = document.getElementById('btn-snap-lock');
+
+// 360 Rotation & Position Controls
 const btnToggleRotate = document.getElementById('btn-toggle-rotate');
+const btnRecenterAnchor = document.getElementById('btn-recenter-anchor');
+const btnVoiceGreeting = document.getElementById('btn-voice-greeting');
 
 // Welcome Entry Modal
 const welcomeModal = document.getElementById('welcome-modal');
@@ -39,7 +46,7 @@ const btnStartCameraExperience = document.getElementById('btn-start-camera-exper
 const btnStart3dExperience = document.getElementById('btn-start-3d-experience');
 
 const cardGeneratorScreen = document.getElementById('card-generator-screen');
-const btnRebloom = document.getElementById('btn-rebloom');
+const btnActivateBurst = document.getElementById('btn-activate-burst');
 const btnTakeSnapshot = document.getElementById('btn-take-snapshot');
 const btnOpenWishes = document.getElementById('btn-open-wishes');
 
@@ -72,10 +79,12 @@ function initWeddingData() {
   if (inputWishTable) inputWishTable.value = table;
   if (welcomeCoupleName) welcomeCoupleName.textContent = couple;
   if (welcomeTableInfo) welcomeTableInfo.textContent = `${table} • ${theme || 'Kasih Abadi'}`;
+
+  arScene.coupleName = couple;
 }
 
 // -----------------------------------------------------------------------------
-// 2. View Mode Controller (Camera AR vs Virtual Banquet 3D vs Printable Card)
+// 2. View Mode Controller (Camera AR vs Virtual 3D Card vs Printable Generator)
 // -----------------------------------------------------------------------------
 async function setView(viewName) {
   appState.currentView = viewName;
@@ -86,49 +95,64 @@ async function setView(viewName) {
     tabBtnCamera?.classList.add('active');
     cardGeneratorScreen?.classList.add('hidden');
     bottomHud?.classList.remove('hidden');
+    arScannerOverlay?.classList.remove('hidden');
 
     const success = await arScene.startCamera();
     if (success) {
-      guidanceText.textContent = '✨ Cincin sentiasa tetap di atas meja • Sentuh skrin pada meja untuk alih kedudukan • Pusing telefon 360°!';
+      guidanceText.textContent = '📸 Halakan kamera ke gambar pengantin pada kad jemputan untuk mengaktifkan Hologram 3D!';
+      if (scannerStatusText) scannerStatusText.textContent = 'Mengesan Gambar Pengantin Pada Kad...';
+
+      // Auto-trigger recognition activation after 1.8 seconds of scanning
+      setTimeout(() => {
+        if (appState.currentView === 'ar-camera') {
+          if (scannerStatusText) scannerStatusText.textContent = '✨ GAMBAR DIKESAN! HOLOGRAM DIAKTIFKAN ✨';
+          arScene.triggerHologramBurst();
+        }
+      }, 1800);
     } else {
-      guidanceText.textContent = 'Mod Simulasi Meja 3D (Kamera tidak dapat diakses) • Seret 360° untuk putar!';
-      arScene.virtualTable.visible = true;
+      guidanceText.textContent = 'Mod Simulasi Kad 3D (Kamera tidak dapat diakses) • Seret 360° untuk melihat kad & hologram!';
+      arScannerOverlay?.classList.add('hidden');
+      arScene.setCameraARMode(false);
     }
   } else if (viewName === 'virtual-3d') {
     tabBtnVirtual?.classList.add('active');
     cardGeneratorScreen?.classList.add('hidden');
     bottomHud?.classList.remove('hidden');
+    arScannerOverlay?.classList.add('hidden');
 
     arScene.stopCamera();
-    arScene.virtualTable.visible = true;
-    guidanceText.textContent = '🥂 Meja Jamuan 3D • Seret untuk putar 360°, cubit untuk zum cincin!';
+    guidanceText.textContent = '🥂 Simulasi Kad Kahwin 3D • Seret untuk putar 360°, cubit/scroll untuk zum hologram!';
   } else if (viewName === 'table-card') {
     tabBtnCard?.classList.add('active');
     cardGeneratorScreen?.classList.remove('hidden');
     bottomHud?.classList.add('hidden');
+    arScannerOverlay?.classList.add('hidden');
+    arScene.stopCamera();
     cardGen.renderCard();
   }
 }
-
-const btnRecenterAnchor = document.getElementById('btn-recenter-anchor');
 
 // -----------------------------------------------------------------------------
 // 3. Welcome Entry Modal Actions
 // -----------------------------------------------------------------------------
 btnStartCameraExperience?.addEventListener('click', async () => {
-  // Request iOS Gyroscope permission directly within user touch event!
   await arScene.gyroManager.requestPermission();
   welcomeModal?.classList.add('hidden');
   await setView('ar-camera');
-  arScene.playOpeningAnimation();
   weddingAudio.init();
 });
 
 btnStart3dExperience?.addEventListener('click', () => {
   welcomeModal?.classList.add('hidden');
   setView('virtual-3d');
-  arScene.playOpeningAnimation();
+  arScene.triggerHologramBurst();
   weddingAudio.init();
+});
+
+// Quick lock button inside scanner overlay
+btnSnapLock?.addEventListener('click', () => {
+  if (scannerStatusText) scannerStatusText.textContent = '✨ HOLOGRAM DIKUNCI & DIAKTIFKAN! ✨';
+  arScene.triggerHologramBurst();
 });
 
 // -----------------------------------------------------------------------------
@@ -141,7 +165,16 @@ btnToggleRotate?.addEventListener('click', () => {
 
 btnRecenterAnchor?.addEventListener('click', () => {
   arScene.recenterAnchor();
-  guidanceText.textContent = '🎯 Cincin diletakkan semula tepat di atas meja di hadapan anda!';
+  guidanceText.textContent = '🎯 Hologram diletakkan semula tepat di hadapan anda!';
+});
+
+// Voice Greeting Playback Button
+btnVoiceGreeting?.addEventListener('click', () => {
+  weddingAudio.speakGreeting(appState.weddingInfo.couple);
+  btnVoiceGreeting.classList.add('active');
+  setTimeout(() => {
+    btnVoiceGreeting.classList.remove('active');
+  }, 3000);
 });
 
 // -----------------------------------------------------------------------------
@@ -165,31 +198,24 @@ window.addEventListener('pointerdown', () => {
 }, { once: true });
 
 // -----------------------------------------------------------------------------
-// 6. Filter Chips (All, Flowers, Rings, Butterflies)
+// 6. Hologram Theme Chips (Gold, Cyan, Ruby)
 // -----------------------------------------------------------------------------
-document.querySelectorAll('.filter-chip').forEach(chip => {
+document.querySelectorAll('.filter-chip[data-theme]').forEach(chip => {
   chip.addEventListener('click', (e) => {
-    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.filter-chip[data-theme]').forEach(c => c.classList.remove('active'));
     e.currentTarget.classList.add('active');
 
-    const mode = e.currentTarget.getAttribute('data-mode');
-    arScene.setMode(mode);
-
-    if (mode === 'rings') {
-      weddingAudio.playRingShimmer();
-    } else if (mode === 'butterflies') {
-      weddingAudio.playButterflyFlutter();
-    } else {
-      weddingAudio.playBloomSfx();
-    }
+    const theme = e.currentTarget.getAttribute('data-theme');
+    appState.currentTheme = theme;
+    arScene.setTheme(theme);
   });
 });
 
 // -----------------------------------------------------------------------------
 // 7. Interactive HUD Buttons
 // -----------------------------------------------------------------------------
-btnRebloom?.addEventListener('click', () => {
-  arScene.triggerBloom();
+btnActivateBurst?.addEventListener('click', () => {
+  arScene.triggerHologramBurst();
 });
 
 btnTakeSnapshot?.addEventListener('click', () => {
@@ -199,10 +225,10 @@ btnTakeSnapshot?.addEventListener('click', () => {
 
   snapshotPreviewImg.src = snapshotDataUrl;
   btnDownloadSnap.href = snapshotDataUrl;
-  btnDownloadSnap.download = `MagicTable-${couple.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+  btnDownloadSnap.download = `HologramPengantin-${couple.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
 
   snapshotModal.classList.remove('hidden');
-  weddingAudio.playBloomSfx();
+  weddingAudio.playHologramActivate();
 });
 
 btnCloseSnap?.addEventListener('click', () => {
@@ -214,12 +240,12 @@ btnShareSnap?.addEventListener('click', async () => {
   try {
     const res = await fetch(dataUrl);
     const blob = await res.blob();
-    const file = new File([blob], 'MagicTableAR.png', { type: 'image/png' });
+    const file = new File([blob], 'HologramPengantinAR.png', { type: 'image/png' });
 
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
-        title: `Magic Table AR — Walimatulurus ${appState.weddingInfo.couple}`,
-        text: `Saksikan keajaiban AR di meja perkahwinan ${appState.weddingInfo.couple}! ✨`,
+        title: `Hologram AR Kad Kahwin — Walimatulurus ${appState.weddingInfo.couple}`,
+        text: `Saksikan Hologram 3D pasangan pengantin ${appState.weddingInfo.couple} muncul dari kad kahwin! ✨`,
         files: [file]
       });
     } else {

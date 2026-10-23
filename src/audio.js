@@ -145,40 +145,85 @@ class WeddingAudioManager {
     osc.stop(now + duration);
   }
 
-  // SFX: Blooming flower magical flourish
-  playBloomSfx() {
+  // SFX: Hologram Activation Beam Sound
+  playHologramActivate() {
     this.init();
     if (!this.ctx || this.isMuted) return;
-    const notes = [392, 493.88, 587.33, 739.99, 880, 1046.50, 1174.66];
-    notes.forEach((f, i) => {
+    const now = this.ctx.currentTime;
+
+    // 1. Ascending laser / holographic power-up chirp
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(220, now);
+    osc.frequency.exponentialRampToValueAtTime(1320, now + 0.6);
+
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.18, now + 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 0.7);
+
+    // 2. Harmonic crystalline sparkle fanfare
+    const notes = [440, 554.37, 659.25, 880, 1108.73, 1318.51];
+    notes.forEach((f, idx) => {
       setTimeout(() => {
-        this.playRomanticChime(f, 1.2, 0.15);
-      }, i * 90);
+        this.playRomanticChime(f, 1.4, 0.15);
+      }, 200 + idx * 80);
     });
+  }
+
+  // SFX: Hologram Theme Switcher
+  playThemeSwitch() {
+    this.init();
+    if (!this.ctx || this.isMuted) return;
+    const notes = [659.25, 880, 1318.51];
+    notes.forEach((f, idx) => {
+      setTimeout(() => {
+        this.playRomanticChime(f, 0.6, 0.12);
+      }, idx * 60);
+    });
+  }
+
+  // Voice Greeting: "Selamat Pengantin Baharu!"
+  speakGreeting(coupleName = "Arif & Haziqah") {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const text = `Selamat Pengantin Baharu kepada ${coupleName}. Semoga ikatan perkahwinan ini sentiasa diberkati, bahagia hingga ke Jannah. Terima kasih kerana sudi hadir meraikan hari bahagia kami!`;
+      const utterance = new SpeechSynthesisUtterance(text);
+      
+      const voices = window.speechSynthesis.getVoices();
+      const malayVoice = voices.find(v => v.lang.startsWith('ms') || v.lang.startsWith('id'));
+      if (malayVoice) {
+        utterance.voice = malayVoice;
+      }
+      utterance.rate = 0.92;
+      utterance.pitch = 1.05;
+      utterance.volume = 1.0;
+
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.warn('Speech synthesis error:', err);
+    }
+  }
+
+  // SFX: Blooming flower magical flourish (kept for backwards compatibility)
+  playBloomSfx() {
+    this.playHologramActivate();
   }
 
   // SFX: Diamond ring shimmer
   playRingShimmer() {
-    this.init();
-    if (!this.ctx || this.isMuted) return;
-    const glints = [1318.5, 1567.98, 2093.0];
-    glints.forEach((f, i) => {
-      setTimeout(() => {
-        this.playRomanticChime(f, 0.8, 0.12);
-      }, i * 70);
-    });
+    this.playThemeSwitch();
   }
 
   // SFX: Butterfly wing flutter / tap spawn
   playButterflyFlutter() {
-    this.init();
-    if (!this.ctx || this.isMuted) return;
-    const notes = [587.33, 880, 1174.66];
-    notes.forEach((f, i) => {
-      setTimeout(() => {
-        this.playRomanticChime(f, 0.6, 0.09);
-      }, i * 50);
-    });
+    this.playThemeSwitch();
   }
 
   // SFX: Wish sent celebratory chime

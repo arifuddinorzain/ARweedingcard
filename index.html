@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Magic Table AR • Meja Ajaib Perkahwinan</title>
-    <meta name="description" content="Pengalaman WebAR Meja Perkahwinan: Imbas QR di meja dan nikmati Bunga Digital Mekar, Rama-rama 3D, dan Cincin Berlian bercahaya seolah-olah berada di atas meja anda." />
+    <title>Hologram AR Kad Kahwin • Walimatulurus Arif & Haziqah</title>
+    <meta name="description" content="Pengalaman WebAR Hologram Kad Kahwin: Imbas QR pada kad jemputan dan halakan kamera ke gambar pengantin untuk menyaksikan Hologram 3D pasangan pengantin muncul berserta ucapan Selamat Pengantin Baharu." />
     
-    <!-- Google Fonts: Playfair Display, Cinzel, Plus Jakarta Sans -->
+    <!-- Google Fonts: Cinzel, Playfair Display, Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -20,12 +20,40 @@
       <!-- Three.js 3D WebGL Canvas -->
       <canvas id="ar-webgl-canvas"></canvas>
 
+      <!-- Camera AR Card Scanner Viewfinder (Active in Camera AR Mode) -->
+      <div class="ar-scanner-overlay hidden" id="ar-scanner-overlay">
+        <div class="scanner-reticle-box">
+          <div class="corner-bracket top-left"></div>
+          <div class="corner-bracket top-right"></div>
+          <div class="corner-bracket bottom-left"></div>
+          <div class="corner-bracket bottom-right"></div>
+          
+          <!-- Animated Scanning Laser Line -->
+          <div class="scanner-laser-line"></div>
+
+          <!-- Center Target Helper -->
+          <div class="target-center-guide">
+            <span class="target-icon">🎯</span>
+            <span class="target-label">Halakan Ke Gambar Pengantin</span>
+          </div>
+        </div>
+
+        <div class="scanner-status-pill" id="scanner-status-pill">
+          <span class="scanner-dot"></span>
+          <span id="scanner-status-text">Mengesan Gambar Pengantin Pada Kad...</span>
+        </div>
+
+        <button class="btn-snap-lock" id="btn-snap-lock" title="Kunci & Aktifkan Hologram Serta Merta">
+          ✨ Kunci Posisi & Aktifkan Hologram ✨
+        </button>
+      </div>
+
       <!-- Top Royal Navigation Bar -->
       <header class="top-nav-bar">
         <div class="nav-branding">
-          <div class="gold-ring-icon">💍</div>
+          <div class="gold-crown-icon">👑</div>
           <div class="wedding-title-stack">
-            <span class="wedding-label">WALIMATULURUS</span>
+            <span class="wedding-label">AR HOLOGRAM KAD KAHWIN</span>
             <h1 class="couple-heading" id="header-couple-name">Arif & Haziqah</h1>
           </div>
         </div>
@@ -40,8 +68,8 @@
             <span id="music-icon">🎵</span>
           </button>
 
-          <button id="btn-toggle-generator" class="btn-gold-outline" title="Buka Penjana Kad Meja & QR">
-            🖨️ Kad Meja
+          <button id="btn-toggle-generator" class="btn-gold-outline" title="Lihat Kad Jemputan & Marker QR">
+            🖨️ Kad & QR
           </button>
         </div>
       </header>
@@ -50,82 +78,90 @@
       <div class="mode-tabs-container">
         <div class="mode-pill-selector">
           <button class="mode-pill-btn active" data-view="virtual-3d" id="tab-btn-virtual">
-            🥂 Simulasi Meja 3D
+            🥂 Simulasi Kad 3D
           </button>
           <button class="mode-pill-btn" data-view="ar-camera" id="tab-btn-camera">
-            📸 Kamera AR
+            📸 Pengimbas Kamera AR
           </button>
           <button class="mode-pill-btn" data-view="table-card" id="tab-btn-card">
-            🖨️ Penjana QR
+            🖨️ Kad Kahwin & QR
           </button>
         </div>
       </div>
 
-      <!-- AR Placement Hint Tooltip Banner -->
+      <!-- AR Guidance Tooltip Banner -->
       <div class="ar-guidance-banner" id="ar-guidance">
         <div class="guidance-content">
           <span class="guidance-icon">✨</span>
-          <span class="guidance-text" id="guidance-text">Cincin sentiasa tetap di atas meja anda • Sentuh skrin pada meja untuk ubah kedudukan • Pusing telefon 360°</span>
+          <span class="guidance-text" id="guidance-text">Halakan kamera ke gambar pengantin pada kad kahwin untuk melihat kemunculan Hologram 3D!</span>
         </div>
       </div>
 
       <!-- Bottom Floating Controls (HUD) -->
       <nav class="bottom-hud-bar" id="bottom-hud">
-        <!-- Quick Element Filter & 360 Controls -->
+        <!-- Hologram Style Filter Chips -->
         <div class="filter-chips-row">
-          <button class="filter-chip active" data-mode="all">Semua Magis</button>
-          <button class="filter-chip" data-mode="flowers">🌸 Bunga</button>
-          <button class="filter-chip" data-mode="rings">💍 Cincin</button>
-          <button class="filter-chip" data-mode="butterflies">🦋 Rama-Rama</button>
-          <button class="filter-chip" id="btn-toggle-rotate" title="Pusing 360° Automatik">🔄 360° Pusing</button>
+          <button class="filter-chip active" data-theme="gold">👑 Emas Diraja</button>
+          <button class="filter-chip" data-theme="cyan">💎 Kristal Maya</button>
+          <button class="filter-chip" data-theme="ruby">🌹 Delima Songket</button>
+          <button class="filter-chip" id="btn-voice-greeting" title="Dengarkan Ucapan Pengantin">🔊 Ucapan Suara</button>
+          <button class="filter-chip" id="btn-toggle-rotate" title="Pusing 360° Automatik">🔄 360° Putar</button>
           <button class="filter-chip" id="btn-recenter-anchor" title="Letakkan Semula Di Hadapan Anda">🎯 Reset Posisi</button>
         </div>
 
         <!-- Main Action Buttons -->
         <div class="hud-action-grid">
-          <button class="hud-circle-btn" id="btn-rebloom" title="Mekar Semula Bunga">
-            <span class="hud-icon">🌸</span>
-            <span class="hud-text">Mekar</span>
+          <button class="hud-circle-btn" id="btn-activate-burst" title="Aktifkan Pancaran & Ucapan Pengantin">
+            <span class="hud-icon">✨</span>
+            <span class="hud-text">Pancaran</span>
           </button>
 
-          <button class="hud-primary-snap" id="btn-take-snapshot" title="Tangkap Gambar Kenangan AR">
+          <button class="hud-primary-snap" id="btn-take-snapshot" title="Tangkap Foto Bersama Hologram AR">
             <div class="snap-ring-outer">
               <div class="snap-ring-inner">
                 <span class="snap-icon">📸</span>
               </div>
             </div>
-            <span class="snap-label">GAMBAR AR</span>
+            <span class="snap-label">FOTO AR</span>
           </button>
 
-          <button class="hud-circle-btn" id="btn-open-wishes" title="Buku Ucapan Tetamu">
+          <button class="hud-circle-btn" id="btn-open-wishes" title="Buku Ucapan & Doa Restu">
             <span class="hud-icon">💌</span>
             <span class="hud-text">Ucapan</span>
           </button>
         </div>
       </nav>
 
-      <!-- Modal: Welcome / Launch AR Experience (Opens when guest scans QR) -->
+      <!-- Modal: Welcome / Launch Hologram Experience -->
       <div class="modal-backdrop" id="welcome-modal">
         <div class="welcome-card glass-card">
           <div class="welcome-bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
           <div class="welcome-badge">✨ WALIMATULURUS RAJA SEHARI ✨</div>
           <h1 class="welcome-title" id="welcome-couple-name">Arif & Haziqah</h1>
           <div class="welcome-table-badge" id="welcome-table-info">Meja 07 • Kasih Abadi</div>
+          
+          <!-- Mini Preview of Couple Photo -->
+          <div class="welcome-photo-preview">
+            <img src="/pengantin.jpg" alt="Pengantin Arif & Haziqah" class="welcome-img" />
+            <div class="welcome-photo-tag">🎯 Gambar Sasaran Kad Kahwin</div>
+          </div>
+
           <p class="welcome-desc">
-            Selamat datang! Bunga digital mekar, cincin perkahwinan berlian, dan rama-rama bercahaya telah diletakkan tepat di atas meja anda. Pusingkan telefon atau seret skrin 360° untuk melihat setiap sudut keajaiban!
+            Selamat datang! Halakan kamera telefon anda ke <strong>gambar pengantin</strong> pada kad jemputan perkahwinan untuk menyaksikan pasangan raja sehari muncul sebagai <strong>Hologram 3D</strong> dengan ucapan Selamat Pengantin Baharu!
           </p>
+          
           <div class="welcome-buttons-stack">
             <button class="btn-primary-gold btn-welcome-action" id="btn-start-camera-experience">
-              📸 Buka Kamera & Lihat di Atas Meja
+              📸 Buka Kamera & Halakan Pada Kad
             </button>
             <button class="btn-welcome-secondary" id="btn-start-3d-experience">
-              🥂 Teruskan Dalam Mod Meja 3D
+              🥂 Teruskan Dalam Mod Simulasi 3D
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Printable Card Generator Screen Container (Toggled via Tab) -->
+      <!-- Printable Card Generator Screen Container -->
       <div class="generator-overlay-container hidden" id="card-generator-screen">
         <div id="generator-mount-point"></div>
       </div>
@@ -155,7 +191,7 @@
             <div class="preset-chips-row">
               <button type="button" class="preset-chip">Barakallahu lakuma ✨</button>
               <button type="button" class="preset-chip">Semoga kekal hingga ke Jannah 🤍</button>
-              <button type="button" class="preset-chip">Selamat Pengantin Baru bro! 💍</button>
+              <button type="button" class="preset-chip">Selamat Pengantin Baharu bro! 👑</button>
             </div>
 
             <button type="submit" class="btn-primary-gold w-100">
@@ -178,18 +214,18 @@
         <div class="modal-sheet glass-card snapshot-sheet">
           <div class="modal-header">
             <div class="modal-title-wrap">
-              <span class="modal-badge">✨ KENANGAN MEJA AJAIB</span>
-              <h2>Foto Magic Table AR Anda</h2>
+              <span class="modal-badge">✨ KENANGAN HOLOGRAM AR</span>
+              <h2>Foto Bersama Hologram Pengantin</h2>
             </div>
             <button class="btn-close-modal" id="btn-close-snap">✕</button>
           </div>
 
           <div class="snapshot-preview-box">
-            <img id="snapshot-preview-img" src="" alt="AR Snapshot" />
+            <img id="snapshot-preview-img" src="" alt="AR Hologram Snapshot" />
           </div>
 
           <div class="snapshot-actions-row">
-            <a id="btn-download-snap" class="btn-primary-gold flex-1" download="Magic-Table-AR-Memory.png">
+            <a id="btn-download-snap" class="btn-primary-gold flex-1" download="Hologram-Pengantin-Memory.png">
               📥 Muat Turun Foto
             </a>
             <button id="btn-share-snap" class="btn-secondary-emerald flex-1">

@@ -1,61 +1,58 @@
-# 💍 Magic Table AR — Meja Ajaib Perkahwinan
+# 👑 Hologram AR Kad Kahwin — Imbas Kad & Foto Pengantin
 
-> **"Satu QR, Satu Pengalaman"**  
-> Tetamu mengimbas kod QR di atas meja jamuan mereka dan menyaksikan bunga digital mekar, rama-rama 3D berterbangan, dan cincin perkahwinan berlian terapung bercahaya di skrin telefon seolah-olah berada di atas meja sebenar.
+> **"Satu Kad, Sejuta Keajaiban"**  
+> Tetamu menerima kad kahwin fizikal dengan gambar pengantin dan kod QR. Tetamu mengimbas kod QR untuk membuka pengimbas WebAR, kemudian menghalakan kamera telefon ke **gambar pasangan pengantin** pada kad. Seketika itu juga, gambar pasangan muncul terapung dalam bentuk **Hologram 3D bercahaya** dengan ucapan **"Selamat Pengantin Baharu"** dan alunan suara restu!
 
 ---
 
 ## ✨ Ciri-Ciri Utama (Key Features)
 
-1. **📸 Mod Kamera AR Sebenar (Live WebAR Table Experience)**
+1. **📸 Pengimbas Kamera AR (Live Camera Card Scanner)**
    - Menggunakan suapan kamera belakang telefon pintar (*WebRTC environment facing*).
-   - Pengesanan dan penempatan di atas meja dengan panduan retikel emas.
-   - Tetamu boleh memutar (*drag*), mengezum (*pinch scale*), dan menyentuh skrin untuk melepaskan rama-rama.
+   - Dilengkapi *viewfinder* pengimbas pintar dengan pancaran garis laser animasi emas (*scanning laser beam*) dan penanda sasaran kad.
+   - Apabila kamera dihalakan ke gambar pengantin pada kad, sistem mengaktifkan portal hologram 3D secara automatik.
 
-2. **🥂 Mod Simulasi Meja Banquet 3D (3D Table Simulation Mode)**
-   - Paparan meja bulat jamuan mewah lengkap dengan kain alas *emerald silk*, rim emas, pemegang lilin terapung berkerlipan, dan dulang alas cermin.
-   - Sesuai untuk paparan di komputer riba / sekiranya tetamu menutup kebenaran kamera.
+2. **✨ Hologram 3D Pasangan Pengantin (Floating 3D Hologram)**
+   - Menggunakan foto sebenar pasangan pengantin berbusana songket diraja di hadapan masjid putih megah.
+   - Diberikan kesan khas hologram: garisan imbasan mendatar (*scanlines*), kilauan biasan cahaya (*chromatic shimmer*), rim cahaya (*fresnel glow*), dan ayunan terapung lembut (*levitation hover*).
+   - Dihiasi gerbang kubah emas diraja 3D berilhamkan seni bina masjid, tiang cahaya volumetrik, dan lingkaran geometri berputar (*cyber-rune rings*).
 
-3. **🌸 Bunga Ros & Peony Mekar Digital (Procedural 3D Blooming Flowers)**
-   - Kelopak bunga 3D berlapis yang mekar secara organik daripada kudup menjadi bunga kembang mekar berseri.
-   - Dilengkapi pusaran kelopak mawar berguguran (*falling petals vortex*) dan debu emas bercahaya.
+3. **🕊️ Ucapan 3D & Ucapan Suara (3D Floating Greetings & Voice Blessing)**
+   - Kaligrafi terapung: *"بَارَكَ اللَّهُ لَكُمَا وَبَارَكَ عَلَيْكُمَا"*
+   - Sepanduk 3D melengkung bersinar: *"✨ SELAMAT PENGANTIN BAHARU ✨"*
+   - Nama pasangan: *"Arif & Haziqah — 24 Disember 2026"*
+   - Ucapan suara automatik / butang suara pengantin: *"Selamat Pengantin Baharu kepada Arif & Haziqah. Terima kasih atas doa dan kehadiran anda!"*
 
-4. **💍 Cincin Perkahwinan Kembar 3D (Floating Interlinked Diamond Rings)**
-   - Gandingan cincin emas *Champagne Gold* dan cincin *Platinum* bertatahkan batu permata berlian bersinar dengan pantulan biasan cahaya (*diamond sparkle glint*).
-   - Terapung dan berputar perlahan di atas jambangan bunga.
+4. **🥂 Mod Simulasi Kad 3D (Virtual 3D Card Simulation)**
+   - Meja jamuan diraja 3D dengan kad jemputan terletak di atas meja bersama foto pengantin dan kod QR.
+   - Hologram 3D memancar keluar dari kad dan boleh diputar 360°, dizum, dan diuji terus pada komputer atau telefon tanpa memerlukan cetakan awal.
 
-5. **🦋 Rama-Rama 3D Berterbangan (Animated 3D Butterflies)**
-   - Sayap beranimasi lembut (*sinusoidal flapping physics*) dengan laluan terbang 3D di sekeliling meja.
-   - Warna *Morpho Blue*, *Golden Monarch*, dan *Amber Sunset* dengan kesan jejak cahaya magis (*stardust trail*).
+5. **🖨️ Penjana Kad Jemputan & Marker QR Boleh Cetak**
+   - Menghasilkan kad jemputan rasmi yang memaparkan:
+     - Foto pasangan pengantin (*Target Marker AR*)
+     - Kod QR pintar yang terus menghubungkan ke laman WebAR
+     - Butiran majlis (nama pasangan, tarikh, dewan/lokasi, nombor meja)
+     - Panduan langkah demi langkah untuk tetamu
+   - Butang **"Cetak Kad Jemputan"** dan **"Muat Turun Kad (PNG Berdefinisi Tinggi)"**.
 
-6. **💌 Buku Tetamu & Ucapan Digital (Interactive Guestbook & Wishing Wall)**
-   - Tetamu boleh menaip ucapan dan doa restu untuk raja sehari.
-   - Butang pilihan pantas seperti *"Barakallahu lakuma ✨"*, *"Semoga kekal hingga ke Jannah 🤍"*.
-   - Hantaran ucapan disambut dengan pancuran konfeti emas & merah jambu (*canvas-confetti*) serta bunyi loceng restu.
+6. **🎨 3 Tema Warna Hologram**
+   - 👑 **Emas Diraja (Royal Gold)**: Sinar keemasan mewah champagne.
+   - 💎 **Kristal Maya (Cyber Cyan)**: Kesan hologram kristal berteknologi tinggi.
+   - 🌹 **Delima Songket (Ruby Burgundy)**: Sesuai dengan warna busana songket pengantin.
 
 7. **📸 Tangkap Gambar Kenangan AR (AR Polaroid Photo Snapshot)**
-   - Menggabungkan suapan kamera langsung + model 3D bunga, cincin, dan rama-rama + bingkai emas elegan *"Walimatulurus Arif & Haziqah"*.
-   - Butang muat turun segera untuk disimpan atau dikongsi terus ke Instagram Story / WhatsApp.
+   - Menggabungkan suapan kamera langsung + Hologram 3D + bingkai emas eksklusif *"Walimatulurus Arif & Haziqah"*.
+   - Muat turun foto terus ke galeri telefon atau kongsi ke WhatsApp / Instagram Story.
 
-8. **🖨️ Penjana Kad Meja & Kod QR Boleh Cetak (Table Tent Card Generator)**
-   - Tuan rumah / pengantin boleh mengubah nama pasangan, nombor meja (contoh: *Meja 07 - Kasih Abadi*), tarikh, dan lokasi.
-   - Kod QR dijana secara dinamik dan dipaparkan pada kad meja berformat lipatan (*folding tent card*).
-   - Tekan butang **"Cetak Kad Meja"** untuk mencetak terus pada kertas kad tebal!
-
-9. **🎵 Muzik Romantik & Kesan Audio (Web Audio API Synthesizer)**
-   - Melodi arpeggio kecapi romantis (irama *Canon in D*) dijana secara terus tanpa fail mp3 luaran.
-   - Kesan audio magis semasa bunga mekar, kilauan cincin, dan kepakan sayap rama-rama.
+8. **💌 Buku Tetamu & Ucapan Digital (Wishing Wall)**
+   - Tetamu boleh menaip ucapan dan doa restu yang disimpan secara langsung.
+   - Dilengkapi letupan konfeti emas dan loceng keraian.
 
 ---
 
 ## 🚀 Cara Menjalankan Projek
 
-### 1. Pasang Kebergantungan (Dependencies)
-```bash
-npm install
-```
-
-### 2. Jalankan Dev Server
+### 1. Jalankan Dev Server
 ```bash
 npm run dev -- --host
 ```
@@ -64,33 +61,19 @@ Aplikasi sedia dibuka di:
 - **Pelayar Komputer:** `http://localhost:5173/`
 - **Telefon Pintar (Wi-Fi sama):** Buka alamat IP rangkaian tempatan anda (contoh: `http://192.168.0.38:5173/`).
 
-> **Nota untuk Penggunaan Kamera Telefon Pintar:**  
-> Pelayar telefon (Chrome / Safari) memerlukan sambungan selamat (HTTPS atau localhost) untuk mengakses kamera. Untuk menguji kamera telefon dari jauh, anda boleh menggunakan alat seperti **ngrok** atau **localtunnel**:
-> ```bash
-> npx localtunnel --port 5173
-> ```
-> Buka URL HTTPS yang diberikan pada telefon anda untuk pengalaman kamera penuh!
-
-### 3. Membina Fail Siap untuk Pelancaran (Production Build)
+### 2. Membina Fail Siap untuk Pelancaran (Production Build)
 ```bash
 npm run build
 ```
-Fail siap akan dijana di dalam folder `dist/` dan boleh dihoskan di mana-mana platform seperti GitHub Pages, Vercel, Netlify, atau Cloudflare Pages.
+Fail siap berada di folder `dist/` dan sedia untuk dideploy ke Netlify, Vercel, atau GitHub Pages.
 
 ---
 
-## 🎨 Struktur Fail Projek
+## 📂 Fail Utama
 
-```
-ARkadkawin/
-├── index.html            # Struktur HTML WebAR, navigasi diraja, HUD & modal
-├── package.json          # Konfigurasi projek & kebergantungan (Vite, Three.js, QRCode, Confetti)
-├── src/
-│   ├── main.js           # Pengawal utama aplikasi & penyelarasan mod
-│   ├── arScene.js        # Enjin 3D Three.js (Bunga mekar, cincin berlian, rama-rama, retikel)
-│   ├── qrGenerator.js    # Penjana kod QR & susun atur kad meja boleh cetak
-│   ├── wishingWall.js    # Pengurus buku ucapan tetamu digital & konfeti
-│   ├── audio.js          # Pengsintesis audio Web Audio API (muzik latar & efek bunyi)
-│   └── style.css         # Reka bentuk estetik mewah perkahwinan (Emerald, Champagne Gold, Glassmorphism)
-└── README.md             # Dokumentasi projek
-```
+- `public/pengantin.jpg` & `src/assets/pengantin.jpg` : Foto pasangan pengantin berbusana songket diraja.
+- `src/arScene.js` : Enjin 3D Three.js yang membina portal hologram, pancaran cahaya, paparan hologram pengantin, teks 3D terapung, dan zarah cahaya.
+- `src/qrGenerator.js` : Penjana kad jemputan boleh cetak lengkap dengan foto sasaran dan kod QR.
+- `src/audio.js` : Pengsintesis muzik romantik dan suara ucapan Selamat Pengantin Baharu.
+- `src/main.js` : Pengawal utama, pengimbas kamera, penukaran tema, dan interaksi pengguna.
+- `src/style.css` : Reka bentuk estetik mewah perkahwinan bertema Songket Burgundy & Champagne Gold.
