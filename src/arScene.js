@@ -106,9 +106,12 @@ export class DeviceOrientationManager {
 }
 
 export class WeddingARScene {
-  constructor(canvasElement, videoElement) {
+  constructor(canvasElement, videoElement, mindarContainerElement = null) {
     this.canvas = canvasElement;
     this.video = videoElement;
+    this.mindarContainer = mindarContainerElement;
+    this.mindarThree = null;
+    this.onTargetStatusChange = null;
     
     this.scene = null;
     this.camera = null;
@@ -156,6 +159,7 @@ export class WeddingARScene {
     this.clock = new THREE.Clock();
     this.isCameraActive = false;
     this.isAutoSpinning = false;
+    this.isAnimationPaused = false;
 
     // Fallback swipe tracking for desktop
     this.manualYaw = 0;
@@ -1009,6 +1013,12 @@ export class WeddingARScene {
 
   animate() {
     requestAnimationFrame(this.animate);
+
+    if (this.isAnimationPaused) {
+      if (this.controls) this.controls.update();
+      this.renderer.render(this.scene, this.camera);
+      return;
+    }
 
     const delta = this.clock.getDelta();
     const time = this.clock.getElapsedTime();

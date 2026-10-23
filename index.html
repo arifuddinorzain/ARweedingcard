@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Hologram AR Kad Kahwin • Walimatulurus Arif & Haziqah</title>
-    <meta name="description" content="Pengalaman WebAR Hologram Kad Kahwin: Imbas QR pada kad jemputan dan halakan kamera ke gambar pengantin untuk menyaksikan Hologram 3D pasangan pengantin muncul berserta ucapan Selamat Pengantin Baharu." />
+    <title>AR Kad Kahwin — Demo Interaktif Image Tracking</title>
+    <meta name="description" content="AR Kad Kahwin: Imbas kad jemputan kahwin menggunakan kamera telefon dan saksikan foto pengantin hidup & terapung sebagai animasi 3D!" />
     
     <!-- Google Fonts: Cinzel, Playfair Display, Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,13 +14,16 @@
   </head>
   <body>
     <div id="app">
-      <!-- Background Video Feed for WebAR -->
+      <!-- MindAR WebGL & Video Container -->
+      <div id="ar-mindar-container" class="mindar-viewport hidden"></div>
+
+      <!-- Fallback Background Video Feed for WebAR -->
       <video id="ar-video-feed" playsinline autoplay muted></video>
 
       <!-- Three.js 3D WebGL Canvas -->
       <canvas id="ar-webgl-canvas"></canvas>
 
-      <!-- Camera AR Card Scanner Viewfinder (Active in Camera AR Mode) -->
+      <!-- Camera AR Card Scanner Viewfinder HUD -->
       <div class="ar-scanner-overlay hidden" id="ar-scanner-overlay">
         <div class="scanner-reticle-box">
           <div class="corner-bracket top-left"></div>
@@ -34,26 +37,28 @@
           <!-- Center Target Helper -->
           <div class="target-center-guide">
             <span class="target-icon">🧲</span>
-            <span class="target-label">Halakan Ke Foto Pengantin (AR Magnet)</span>
+            <span class="target-label">Halakan Ke Gambar Kad Kahwin</span>
           </div>
         </div>
 
         <div class="scanner-status-pill" id="scanner-status-pill">
           <span class="scanner-dot"></span>
-          <span id="scanner-status-text">Mengesan Foto Pengantin Pada Kad...</span>
+          <span id="scanner-status-text">Mengesan Gambar Pada Kad Kahwin...</span>
         </div>
 
-        <button class="btn-snap-lock" id="btn-snap-lock" title="Kunci & Aktifkan AR Magnet Serta Merta">
-          🧲 Kunci & Aktifkan AR Magnet ✨
+        <button class="btn-snap-lock" id="btn-snap-lock" title="Kunci Posisi & Aktifkan Animasi 3D">
+          ✨ Kunci Posisi & Aktifkan Animasi 3D ✨
         </button>
       </div>
 
       <!-- Top Royal Navigation Bar -->
       <header class="top-nav-bar">
         <div class="nav-branding">
-          <div class="gold-crown-icon">👑</div>
+          <button id="btn-exit-ar" class="icon-exit-btn" title="Kembali ke Menu Utama">
+            ✕
+          </button>
           <div class="wedding-title-stack">
-            <span class="wedding-label">AR MAGNET KAD KAHWIN</span>
+            <span class="wedding-label">AR KAD KAHWIN • DEMO</span>
             <h1 class="couple-heading" id="header-couple-name">Arif & Haziqah</h1>
           </div>
         </div>
@@ -93,7 +98,7 @@
       <div class="ar-guidance-banner" id="ar-guidance">
         <div class="guidance-content">
           <span class="guidance-icon">🧲</span>
-          <span class="guidance-text" id="guidance-text">Halakan kamera ke foto pengantin pada kad untuk melihat foto hidup & terapung seperti AR Magnet!</span>
+          <span class="guidance-text" id="guidance-text">Halakan kamera ke foto pengantin pada kad untuk melihat foto hidup & terapung sebagai AR Magnet!</span>
         </div>
       </div>
 
@@ -109,14 +114,22 @@
           <button class="filter-chip" id="btn-recenter-anchor" title="Letakkan Semula Di Hadapan Anda">🎯 Reset Posisi</button>
         </div>
 
-        <!-- Main Action Buttons -->
+        <!-- Main Action Buttons (Matching Infographic Screen 4) -->
         <div class="hud-action-grid">
-          <button class="hud-circle-btn" id="btn-activate-burst" title="Tekan Untuk Animasi Magnet & Ucapan">
-            <span class="hud-icon">🧲</span>
-            <span class="hud-text">Magnet AR</span>
+          <!-- Pause / Play Animation Toggle -->
+          <button class="hud-circle-btn" id="btn-toggle-pause" title="Jeda atau Mainkan Animasi 3D">
+            <span class="hud-icon" id="pause-icon">⏸</span>
+            <span class="hud-text" id="pause-text">Jeda</span>
           </button>
 
-          <button class="hud-primary-snap" id="btn-take-snapshot" title="Tangkap Foto Bersama Hologram AR">
+          <!-- Tap to Interact Button -->
+          <button class="hud-circle-btn" id="btn-tap-interact" title="Sentuh Untuk Interaksi (Tap to Interact)">
+            <span class="hud-icon">👆</span>
+            <span class="hud-text">Interaksi</span>
+          </button>
+
+          <!-- Primary Snapshot Shutter Button -->
+          <button class="hud-primary-snap" id="btn-take-snapshot" title="Tangkap Foto Bersama Animasi AR">
             <div class="snap-ring-outer">
               <div class="snap-ring-inner">
                 <span class="snap-icon">📸</span>
@@ -125,6 +138,7 @@
             <span class="snap-label">FOTO AR</span>
           </button>
 
+          <!-- Guest Wishing Wall -->
           <button class="hud-circle-btn" id="btn-open-wishes" title="Buku Ucapan & Doa Restu">
             <span class="hud-icon">💌</span>
             <span class="hud-text">Ucapan</span>
@@ -132,31 +146,81 @@
         </div>
       </nav>
 
-      <!-- Modal: Welcome / Launch Hologram Experience -->
+      <!-- Modal: Welcome / Landing Web AR Demo (Matching Infographic "Contoh Laman Web AR") -->
       <div class="modal-backdrop" id="welcome-modal">
-        <div class="welcome-card glass-card">
-          <div class="welcome-bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
-          <div class="welcome-badge">✨ WALIMATULURUS RAJA SEHARI ✨</div>
-          <h1 class="welcome-title" id="welcome-couple-name">Arif & Haziqah</h1>
-          <div class="welcome-table-badge" id="welcome-table-info">Meja 07 • Kasih Abadi</div>
-          
-          <!-- Mini Preview of Couple Photo -->
-          <div class="welcome-photo-preview">
-            <img src="/pengantin.jpg" alt="Pengantin Arif & Haziqah" class="welcome-img" />
-            <div class="welcome-photo-tag">🎯 Gambar Sasaran Kad Kahwin</div>
-          </div>
+        <div class="landing-demo-card glass-card">
+          <div class="landing-grid-layout">
+            <!-- Left Panel: Instructions & Start Buttons -->
+            <div class="landing-left-panel">
+              <div class="landing-badge">👑 AR KAD KAHWIN DEMO</div>
+              <h1 class="landing-title">Walimatulurus Arif & Haziqah</h1>
+              <p class="landing-subtitle">
+                Imbas gambar pada kad kahwin menggunakan kamera telefon pintar ➔ <strong>Animasi 3D & Ucapan Muncul di Atas Kad!</strong>
+              </p>
 
-          <p class="welcome-desc">
-            Selamat datang! Halakan kamera telefon anda ke <strong>gambar pengantin</strong> pada kad jemputan perkahwinan untuk menyaksikan pasangan raja sehari muncul sebagai <strong>Hologram 3D</strong> dengan ucapan Selamat Pengantin Baharu!
-          </p>
-          
-          <div class="welcome-buttons-stack">
-            <button class="btn-primary-gold btn-welcome-action" id="btn-start-camera-experience">
-              📸 Buka Kamera & Halakan Pada Kad
-            </button>
-            <button class="btn-welcome-secondary" id="btn-start-3d-experience">
-              🥂 Teruskan Dalam Mod Simulasi 3D
-            </button>
+              <div class="demo-steps-list">
+                <div class="step-item">
+                  <div class="step-num">1</div>
+                  <div class="step-detail">
+                    <strong>Buka capaian kamera telefon</strong>
+                    <span>(Allow camera access pada pelayar anda)</span>
+                  </div>
+                </div>
+
+                <div class="step-item">
+                  <div class="step-num">2</div>
+                  <div class="step-detail">
+                    <strong>Halakan kamera pada kad kahwin</strong>
+                    <span>(Point your camera at the wedding card photo)</span>
+                  </div>
+                </div>
+
+                <div class="step-item">
+                  <div class="step-num">3</div>
+                  <div class="step-detail">
+                    <strong>Saksikan animasi 3D muncul!</strong>
+                    <span>(Foto hidup terapung bersama ucapan raja sehari)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="landing-buttons-group">
+                <button class="btn-primary-gold btn-landing-start" id="btn-start-camera-experience">
+                  📸 Buka Kamera AR (Start Camera)
+                </button>
+                <button class="btn-welcome-secondary" id="btn-start-3d-experience">
+                  🥂 Cuba Mod Simulasi Kad 3D
+                </button>
+                <button class="btn-gold-outline" id="btn-landing-show-card">
+                  🖨️ Cetak / Muat Turun Kad Jemputan
+                </button>
+              </div>
+            </div>
+
+            <!-- Right Panel: Visual Preview of Card & 3D Pop-Out -->
+            <div class="landing-right-panel">
+              <div class="preview-mockup-frame">
+                <div class="mockup-header-bar">
+                  <span class="dot-red"></span>
+                  <span class="dot-yellow"></span>
+                  <span class="dot-green"></span>
+                  <span class="mockup-url">ar-kadkahwin.demo</span>
+                </div>
+                <div class="mockup-media-container">
+                  <img src="/pengantin.jpg" alt="Kad Kahwin Target AR" class="mockup-card-img" />
+                  <div class="mockup-ar-tag">
+                    <span class="pulse-dot"></span>
+                    <span>TARGET IMAGE TRACKING</span>
+                  </div>
+                  <div class="mockup-floating-badge">
+                    <span>✨ SELAMAT PENGANTIN BAHARU ✨</span>
+                  </div>
+                </div>
+                <p class="mockup-caption">
+                  Contoh hasil: Foto pengantin di kad menjadi sasaran imbasan dan memaparkan animasi 3D.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -187,7 +251,6 @@
             </div>
             <textarea id="input-wish-msg" rows="3" placeholder="Tuliskan ucapan tahniah atau doa restu untuk pasangan raja sehari..." required></textarea>
             
-            <!-- Quick Preset Wish Chips -->
             <div class="preset-chips-row">
               <button type="button" class="preset-chip">Barakallahu lakuma ✨</button>
               <button type="button" class="preset-chip">Semoga kekal hingga ke Jannah 🤍</button>
@@ -199,7 +262,6 @@
             </button>
           </form>
 
-          <!-- Wishes Stream List -->
           <div class="wishes-list-wrapper">
             <h3>✨ Ucapan Dari Tetamu Lain</h3>
             <div class="wishes-stream" id="wishes-stream-container">
@@ -214,18 +276,18 @@
         <div class="modal-sheet glass-card snapshot-sheet">
           <div class="modal-header">
             <div class="modal-title-wrap">
-              <span class="modal-badge">✨ KENANGAN HOLOGRAM AR</span>
-              <h2>Foto Bersama Hologram Pengantin</h2>
+              <span class="modal-badge">✨ KENANGAN AR KAD KAHWIN</span>
+              <h2>Foto Bersama Animasi Kad</h2>
             </div>
             <button class="btn-close-modal" id="btn-close-snap">✕</button>
           </div>
 
           <div class="snapshot-preview-box">
-            <img id="snapshot-preview-img" src="" alt="AR Hologram Snapshot" />
+            <img id="snapshot-preview-img" src="" alt="AR Snapshot" />
           </div>
 
           <div class="snapshot-actions-row">
-            <a id="btn-download-snap" class="btn-primary-gold flex-1" download="Hologram-Pengantin-Memory.png">
+            <a id="btn-download-snap" class="btn-primary-gold flex-1" download="AR-Kad-Kahwin-Memory.png">
               📥 Muat Turun Foto
             </a>
             <button id="btn-share-snap" class="btn-secondary-emerald flex-1">
