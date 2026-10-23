@@ -850,11 +850,18 @@ export class WeddingARScene {
     this.isCameraActive = active;
     if (active) {
       this.virtualTable.visible = false;
-      this.camera.position.set(0, 0.65, 1.15);
-      this.camera.lookAt(0, 0.22, 0);
+      // Tilt card upright facing the user's camera viewfinder:
+      if (this.arAnchor) {
+        this.arAnchor.rotation.x = -Math.PI / 4.8;
+      }
+      this.camera.position.set(0, 0.42, 0.95);
+      this.camera.lookAt(0, 0.08, 0);
       if (this.controls) this.controls.enabled = false;
       this.gyroManager.startListening();
     } else {
+      if (this.arAnchor) {
+        this.arAnchor.rotation.x = 0;
+      }
       this.virtualTable.visible = true;
       if (this.controls) this.controls.enabled = true;
       this.gyroManager.stopListening();
@@ -863,20 +870,31 @@ export class WeddingARScene {
 
   async startCamera() {
     try {
-      const constraints = {
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        },
-        audio: false
-      };
+      this.video.setAttribute('playsinline', '');
+      this.video.setAttribute('webkit-playsinline', '');
+      this.video.muted = true;
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('getUserMedia not supported on this origin');
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        });
+      } catch (e) {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+          audio: false
+        });
+      }
+
       this.video.srcObject = stream;
       await this.video.play();
       

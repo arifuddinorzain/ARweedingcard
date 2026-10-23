@@ -118,20 +118,20 @@ async function setView(viewName) {
 
     const success = await arScene.startCamera();
     if (success) {
-      guidanceText.textContent = '🧲 Halakan kamera ke gambar pengantin pada kad kahwin untuk memulakan animasi 3D!';
-      if (scannerStatusText) scannerStatusText.textContent = 'Mengesan Gambar Pada Kad Kahwin...';
+      guidanceText.textContent = '📸 Halakan kamera ke arah gambar pengantin untuk saksikan gambar bergerak!';
+      if (scannerStatusText) scannerStatusText.textContent = 'Mengesan Foto Pengantin...';
 
-      // Auto-trigger fallback snap in 1.8 seconds if not using physical card
+      // Auto-trigger living moving photo in 1.4 seconds when aimed at card
       setTimeout(() => {
         if (appState.currentView === 'ar-camera' && !arScene.isMagnetLocked) {
-          if (scannerStatusText) scannerStatusText.textContent = '✨ KAD DIKESAN! ANIMASI 3D DIAKTIFKAN ✨';
+          if (scannerStatusText) scannerStatusText.textContent = '✨ FOTO PENGANTIN DIKESAN! GAMBAR BERGERAK DIAKTIFKAN ✨';
           arScene.triggerMagneticSnap();
         }
-      }, 1800);
+      }, 1400);
     } else {
-      guidanceText.textContent = 'Mod Simulasi Kad 3D • Seret 360° untuk melihat kad & sentuh foto untuk animasi!';
-      arScannerOverlay?.classList.add('hidden');
-      arScene.setCameraARMode(false);
+      guidanceText.textContent = '📸 Sentuh skrin untuk membenarkan capaian kamera WebAR!';
+      if (scannerStatusText) scannerStatusText.textContent = 'Sentuh Untuk Buka Kamera';
+      arScannerOverlay?.classList.remove('hidden');
     }
   } else if (viewName === 'virtual-3d') {
     tabBtnVirtual?.classList.add('active');
