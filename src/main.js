@@ -99,18 +99,18 @@ async function setView(viewName) {
 
     const success = await arScene.startCamera();
     if (success) {
-      guidanceText.textContent = '📸 Halakan kamera ke gambar pengantin pada kad jemputan untuk mengaktifkan Hologram 3D!';
-      if (scannerStatusText) scannerStatusText.textContent = 'Mengesan Gambar Pengantin Pada Kad...';
+      guidanceText.textContent = '🧲 Halakan kamera ke foto pengantin pada kad untuk melihat animasi AR Magnet!';
+      if (scannerStatusText) scannerStatusText.textContent = 'Mengesan Foto Pengantin Pada Kad...';
 
-      // Auto-trigger recognition activation after 1.8 seconds of scanning
+      // Auto-trigger magnetic snap after 1.8 seconds of scanning
       setTimeout(() => {
         if (appState.currentView === 'ar-camera') {
-          if (scannerStatusText) scannerStatusText.textContent = '✨ GAMBAR DIKESAN! HOLOGRAM DIAKTIFKAN ✨';
-          arScene.triggerHologramBurst();
+          if (scannerStatusText) scannerStatusText.textContent = '🧲 KAD MAGNET DIKESAN! FOTO HIDUP DIAKTIFKAN ✨';
+          arScene.triggerMagneticSnap();
         }
       }, 1800);
     } else {
-      guidanceText.textContent = 'Mod Simulasi Kad 3D (Kamera tidak dapat diakses) • Seret 360° untuk melihat kad & hologram!';
+      guidanceText.textContent = 'Mod Simulasi Kad 3D • Seret 360° untuk melihat kad & sentuh foto untuk animasi magnet!';
       arScannerOverlay?.classList.add('hidden');
       arScene.setCameraARMode(false);
     }
@@ -121,7 +121,7 @@ async function setView(viewName) {
     arScannerOverlay?.classList.add('hidden');
 
     arScene.stopCamera();
-    guidanceText.textContent = '🥂 Simulasi Kad Kahwin 3D • Seret untuk putar 360°, cubit/scroll untuk zum hologram!';
+    guidanceText.textContent = '🥂 Simulasi Kad 3D • Sentuh foto pengantin untuk melihat foto hidup & terapung seperti magnet!';
   } else if (viewName === 'table-card') {
     tabBtnCard?.classList.add('active');
     cardGeneratorScreen?.classList.remove('hidden');
@@ -145,14 +145,14 @@ btnStartCameraExperience?.addEventListener('click', async () => {
 btnStart3dExperience?.addEventListener('click', () => {
   welcomeModal?.classList.add('hidden');
   setView('virtual-3d');
-  arScene.triggerHologramBurst();
+  arScene.triggerMagneticSnap();
   weddingAudio.init();
 });
 
 // Quick lock button inside scanner overlay
 btnSnapLock?.addEventListener('click', () => {
-  if (scannerStatusText) scannerStatusText.textContent = '✨ HOLOGRAM DIKUNCI & DIAKTIFKAN! ✨';
-  arScene.triggerHologramBurst();
+  if (scannerStatusText) scannerStatusText.textContent = '🧲 AR MAGNET DIKUNCI & DIAKTIFKAN! ✨';
+  arScene.triggerMagneticSnap();
 });
 
 // -----------------------------------------------------------------------------

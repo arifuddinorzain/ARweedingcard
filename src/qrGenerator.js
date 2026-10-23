@@ -143,14 +143,14 @@ export class TableCardGenerator {
     ctx.strokeRect(photoX, photoY, photoW, photoH);
 
     // AR Target Badge on Photo
-    ctx.fillStyle = 'rgba(74, 14, 23, 0.9)';
-    ctx.fillRect(photoX + 180, photoY + photoH - 42, 360, 36);
+    ctx.fillStyle = 'rgba(74, 14, 23, 0.92)';
+    ctx.fillRect(photoX + 160, photoY + photoH - 42, 400, 36);
     ctx.strokeStyle = '#d4af37';
     ctx.lineWidth = 2;
-    ctx.strokeRect(photoX + 180, photoY + photoH - 42, 360, 36);
+    ctx.strokeRect(photoX + 160, photoY + photoH - 42, 400, 36);
     ctx.fillStyle = '#f3e5ab';
     ctx.font = 'bold 15px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('🎯 SASARAN KAMERA AR HOLOGRAM 🎯', 500, photoY + photoH - 18);
+    ctx.fillText('🧲 SASARAN KAMERA AR MAGNET 🧲', 500, photoY + photoH - 18);
 
     // 5. Instruction Banner
     ctx.fillStyle = '#aa820a';
@@ -289,7 +289,7 @@ export class TableCardGenerator {
                     <img src="${this.currentData.photoUrl}" alt="Pengantin Arif & Haziqah" class="card-couple-img" id="preview-couple-img" />
                     <div class="marker-target-badge">
                       <span class="pulse-dot"></span>
-                      <span>SASARAN KAMERA AR HOLOGRAM</span>
+                      <span>🧲 SASARAN KAMERA AR MAGNET</span>
                     </div>
                   </div>
                 </div>

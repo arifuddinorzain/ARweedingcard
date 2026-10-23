@@ -119,15 +119,21 @@ export class WeddingARScene {
     // Core 3D Groups
     this.arAnchor = null;
     this.cardMesh = null;
-    this.hologramGroup = null;
-    this.portalEmitter = null;
-    this.lightBeam = null;
-    this.couplePlaque = null;
-    this.greetingBanners = [];
+    this.virtualTable = null;
+    
+    // AR Magnet Photo Components
+    this.arMagnetGroup = null;
+    this.magnetPhotoMesh = null;
+    this.magnetFrameMesh = null;
+    this.magnetShadowMesh = null;
+    this.magnetWaveMesh = null;
+    this.cornerClips = [];
+    
+    // 3D Floating Elements
+    this.topBanner = null;
+    this.btmPlaque = null;
     this.orbitingHearts = [];
     this.hologramParticles = null;
-    this.virtualTable = null;
-    this.scanReticle = null;
     
     // Theme & Shader control
     this.currentTheme = 'gold'; // 'gold', 'cyan', 'ruby'
@@ -137,16 +143,26 @@ export class WeddingARScene {
       ruby: { primary: 0xd81b60, light: 0xff80ab, glow: 0xff4081, hex: '#d81b60' }
     };
 
+    // Magnet Physics State
+    this.isMagnetLocked = false;
+    this.magnetElevation = 0.045; // target height when popped out
+    this.currentElevation = 0.045;
+    this.targetElevation = 0.045;
+    this.magnetScale = 1.0;
+    this.magnetSpringVelocity = 0;
+    this.magnetTiltX = 0;
+    this.magnetTiltZ = 0;
+
     this.clock = new THREE.Clock();
     this.isCameraActive = false;
     this.isAutoSpinning = false;
-    this.hasTargetLocked = true; // Auto-locks onto card
 
-    // Fallback swipe tracking for desktop / non-gyro devices
+    // Fallback swipe tracking for desktop
     this.manualYaw = 0;
     this.manualPitch = 0;
     this.isDragging = false;
     this.lastPointer = { x: 0, y: 0 };
+    this.pointerNormalized = new THREE.Vector2(0, 0);
 
     this.coupleName = 'Arif & Haziqah';
     this.weddingDate = '24 Disember 2026';
@@ -162,9 +178,9 @@ export class WeddingARScene {
     this.scene = new THREE.Scene();
 
     // 2. Camera: Angled view for natural looking down at table card
-    this.camera = new THREE.PerspectiveCamera(48, width / height, 0.1, 100);
-    this.camera.position.set(0, 0.85, 1.45);
-    this.camera.lookAt(0, 0.35, 0);
+    this.camera = new THREE.PerspectiveCamera(46, width / height, 0.1, 100);
+    this.camera.position.set(0, 0.78, 1.25);
+    this.camera.lookAt(0, 0.22, 0);
 
     // 3. Renderer with transparent background for WebAR
     this.renderer = new THREE.WebGLRenderer({
@@ -182,20 +198,20 @@ export class WeddingARScene {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
-    this.controls.minDistance = 0.45;
-    this.controls.maxDistance = 4.0;
-    this.controls.maxPolarAngle = Math.PI / 2.02;
-    this.controls.target.set(0, 0.35, 0);
+    this.controls.minDistance = 0.35;
+    this.controls.maxDistance = 3.5;
+    this.controls.maxPolarAngle = Math.PI / 2.05;
+    this.controls.target.set(0, 0.22, 0);
     this.controls.autoRotate = false;
     this.controls.autoRotateSpeed = 1.2;
 
-    // 5. Gyroscope Orientation Manager (Active in Camera AR mode)
+    // 5. Gyroscope Orientation Manager
     this.gyroManager = new DeviceOrientationManager(this.camera);
 
     // 6. Lighting
     this.setupLighting();
 
-    // 7. AR Anchor Group (anchors onto the card on table)
+    // 7. AR Anchor Group
     this.arAnchor = new THREE.Group();
     this.arAnchor.position.set(0, 0, 0);
     this.scene.add(this.arAnchor);
@@ -203,13 +219,12 @@ export class WeddingARScene {
     // 8. Build 3D Models
     this.buildVirtualBanquetTable();
     this.buildPhysicalWeddingCard();
-    this.buildHologramPortalEmitter();
-    this.buildHologramCouple();
+    this.buildARMagnetPhoto(); // The Living AR Magnet Centerpiece!
     this.buildFloating3DGreetings();
     this.buildOrbitingHearts();
     this.buildHologramParticles();
 
-    // 9. Event Listeners
+    // 9. Event Listeners & Interactions
     window.addEventListener('resize', () => this.onWindowResize());
     this.setupGestures();
 
@@ -219,31 +234,31 @@ export class WeddingARScene {
   }
 
   setupLighting() {
-    const ambientLight = new THREE.AmbientLight(0xfff3e0, 1.4);
+    const ambientLight = new THREE.AmbientLight(0xfff5ea, 1.5);
     this.scene.add(ambientLight);
 
-    const mainLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    const mainLight = new THREE.DirectionalLight(0xffffff, 2.2);
     mainLight.position.set(1.5, 3.5, 2.0);
     this.scene.add(mainLight);
 
-    const rimLight = new THREE.DirectionalLight(0xffd700, 1.2);
+    const rimLight = new THREE.DirectionalLight(0xffd700, 1.4);
     rimLight.position.set(-2, 2.0, -1.5);
     this.scene.add(rimLight);
 
-    // Hologram vertical projection beacon
-    this.holoPointLight = new THREE.PointLight(0xd4af37, 2.5, 3.0, 1.2);
-    this.holoPointLight.position.set(0, 0.4, 0);
-    this.scene.add(this.holoPointLight);
+    // Magnetic beacon point light
+    this.magnetPointLight = new THREE.PointLight(0xd4af37, 2.5, 2.5, 1.2);
+    this.magnetPointLight.position.set(0, 0.2, -0.065);
+    this.scene.add(this.magnetPointLight);
   }
 
   // Virtual Banquet Table with Dark Royal Silk Tablecloth & Ambience
   buildVirtualBanquetTable() {
     this.virtualTable = new THREE.Group();
 
-    // 1. Table Top Surface
+    // Table Top Surface
     const tableGeo = new THREE.CylinderGeometry(1.4, 1.4, 0.04, 48);
     const tableMat = new THREE.MeshStandardMaterial({
-      color: 0x0d211a, // Royal dark emerald cloth
+      color: 0x0d211a,
       roughness: 0.7,
       metalness: 0.1
     });
@@ -251,7 +266,7 @@ export class WeddingARScene {
     tableMesh.position.y = -0.02;
     this.virtualTable.add(tableMesh);
 
-    // 2. Gold Embroidered Table Runner Mat
+    // Gold Embroidered Table Runner Mat
     const runnerGeo = new THREE.PlaneGeometry(0.7, 1.1);
     const runnerMat = new THREE.MeshStandardMaterial({
       color: 0x143428,
@@ -262,17 +277,6 @@ export class WeddingARScene {
     runnerMesh.rotation.x = -Math.PI / 2;
     runnerMesh.position.y = 0.001;
     this.virtualTable.add(runnerMesh);
-
-    // Gold trim on runner
-    const borderGeo = new THREE.RingGeometry(0.38, 0.39, 48);
-    const borderMat = new THREE.MeshBasicMaterial({
-      color: 0xd4af37,
-      side: THREE.DoubleSide
-    });
-    const borderMesh = new THREE.Mesh(borderGeo, borderMat);
-    borderMesh.rotation.x = -Math.PI / 2;
-    borderMesh.position.y = 0.002;
-    this.virtualTable.add(borderMesh);
 
     // Soft Table Shadow under card
     const shadowGeo = new THREE.PlaneGeometry(0.65, 0.85);
@@ -289,17 +293,15 @@ export class WeddingARScene {
     this.scene.add(this.virtualTable);
   }
 
-  // The Physical Wedding Card Lying on the Table (Card Marker)
+  // The Physical Wedding Card Lying on the Table
   buildPhysicalWeddingCard() {
-    // Generate Wedding Card Texture with the Couple Photo & QR
     const cardCanvas = document.createElement('canvas');
     cardCanvas.width = 700;
     cardCanvas.height = 950;
     const ctx = cardCanvas.getContext('2d');
 
-    // Draw initial card
     const drawCardTexture = (img = null) => {
-      // Background Parchment
+      // Parchment Background
       const grad = ctx.createLinearGradient(0, 0, 700, 950);
       grad.addColorStop(0, '#fdfaf5');
       grad.addColorStop(1, '#f3ebd9');
@@ -328,7 +330,7 @@ export class WeddingARScene {
       ctx.font = 'bold 36px serif';
       ctx.fillText(this.coupleName, 350, 140);
 
-      // Couple Photo
+      // Base printed photo placeholder on card
       const photoX = 85;
       const photoY = 165;
       const photoW = 530;
@@ -353,14 +355,14 @@ export class WeddingARScene {
       ctx.strokeRect(photoX + 115, photoY + photoH - 32, 300, 28);
       ctx.fillStyle = '#f3e5ab';
       ctx.font = 'bold 12px sans-serif';
-      ctx.fillText('🎯 SASARAN KAMERA AR HOLOGRAM 🎯', 350, photoY + photoH - 13);
+      ctx.fillText('🧲 FOTO SASARAN AR MAGNET 🧲', 350, photoY + photoH - 13);
 
       // Instructions & Details
       ctx.fillStyle = '#aa820a';
       ctx.font = 'bold 15px sans-serif';
-      ctx.fillText('▼ IMBAS KOD QR & HALAKAN KAMERA KE FOTO DI ATAS ▼', 350, 565);
+      ctx.fillText('▼ IMBAS QR & HALAKAN KAMERA KE FOTO DI ATAS ▼', 350, 565);
 
-      // Mock QR visual on 3D card
+      // QR visual on 3D card
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(270, 585, 160, 160);
       ctx.strokeStyle = '#d4af37';
@@ -374,7 +376,7 @@ export class WeddingARScene {
       // Card Footer
       ctx.fillStyle = '#4a0e17';
       ctx.font = 'italic 14px serif';
-      ctx.fillText('Saksikan Hologram 3D Pasangan Pengantin Muncul Membawa Ucapan!', 350, 775);
+      ctx.fillText('Foto Pengantin Akan Hidup & Terapung Sebagai AR Magnet!', 350, 775);
 
       ctx.fillStyle = '#aa820a';
       ctx.font = 'bold 16px serif';
@@ -395,7 +397,6 @@ export class WeddingARScene {
     this.cardTexture = new THREE.CanvasTexture(cardCanvas);
     this.cardTexture.anisotropy = 4;
 
-    // Card 3D Geometry (0.42m width x 0.57m length x 0.003m thickness)
     const cardGeo = new THREE.BoxGeometry(0.42, 0.003, 0.57);
     const cardMat = new THREE.MeshStandardMaterial({
       map: this.cardTexture,
@@ -408,132 +409,61 @@ export class WeddingARScene {
     this.arAnchor.add(this.cardMesh);
   }
 
-  // Hologram Base Portal Emitter on the Card Photo
-  buildHologramPortalEmitter() {
-    this.portalEmitter = new THREE.Group();
-    // Centered above the couple photo area on the card
-    this.portalEmitter.position.set(0, 0.006, -0.065);
+  // =========================================================================
+  // AR MAGNET LIVING PHOTO CENTERPIECE
+  // Sits precisely on top of the card's photo rectangle & comes alive with animations!
+  // =========================================================================
+  buildARMagnetPhoto() {
+    this.arMagnetGroup = new THREE.Group();
+    // Centered exactly over the photo on the card:
+    // (photo area on card: width ~0.318, height/length ~0.222, center at z = -0.065)
+    this.arMagnetGroup.position.set(0, 0.045, -0.065);
 
-    // 1. Outer Concentric Cyber-Gold Geometric Ring
-    const outerRingGeo = new THREE.RingGeometry(0.18, 0.195, 64);
-    const outerRingMat = new THREE.MeshBasicMaterial({
-      color: 0xd4af37,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.85
-    });
-    this.outerRing = new THREE.Mesh(outerRingGeo, outerRingMat);
-    this.outerRing.rotation.x = -Math.PI / 2;
-    this.portalEmitter.add(this.outerRing);
+    const magnetW = 0.318;
+    const magnetH = 0.222;
 
-    // 2. Middle Runes Ring
-    const midRingGeo = new THREE.RingGeometry(0.13, 0.145, 48);
-    const midRingMat = new THREE.MeshBasicMaterial({
-      color: 0xffe6a3,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.65
-    });
-    this.midRing = new THREE.Mesh(midRingGeo, midRingMat);
-    this.midRing.rotation.x = -Math.PI / 2;
-    this.portalEmitter.add(this.midRing);
+    // 1. Dynamic Magnetic Soft Contact Shadow on Card Surface below
+    const shadowCanvas = document.createElement('canvas');
+    shadowCanvas.width = 128;
+    shadowCanvas.height = 128;
+    const sctx = shadowCanvas.getContext('2d');
+    const sgrad = sctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    sgrad.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
+    sgrad.addColorStop(0.5, 'rgba(0, 0, 0, 0.25)');
+    sgrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    sctx.fillStyle = sgrad;
+    sctx.fillRect(0, 0, 128, 128);
 
-    // 3. Inner Glowing Core Disc
-    const coreGeo = new THREE.CircleGeometry(0.09, 32);
-    const coreMat = new THREE.MeshBasicMaterial({
-      color: 0xd4af37,
+    const shadowTex = new THREE.CanvasTexture(shadowCanvas);
+    const shadowGeo = new THREE.PlaneGeometry(magnetW * 1.25, magnetH * 1.35);
+    const shadowMat = new THREE.MeshBasicMaterial({
+      map: shadowTex,
       transparent: true,
-      opacity: 0.25,
-      blending: THREE.AdditiveBlending
-    });
-    this.coreDisc = new THREE.Mesh(coreGeo, coreMat);
-    this.coreDisc.rotation.x = -Math.PI / 2;
-    this.portalEmitter.add(this.coreDisc);
-
-    // 4. Vertical Hologram Volumetric Light Cone
-    // Beams up from the card surface directly into the floating hologram!
-    const coneGeo = new THREE.CylinderGeometry(0.24, 0.14, 0.55, 32, 1, true);
-    
-    // Shader for vertical gradient fading out upwards
-    const beamMat = new THREE.ShaderMaterial({
-      uniforms: {
-        uColor: { value: new THREE.Color(0xd4af37) },
-        uTime: { value: 0 }
-      },
-      vertexShader: `
-        varying vec2 vUv;
-        varying vec3 vNormal;
-        void main() {
-          vUv = uv;
-          vNormal = normalize(normalMatrix * normal);
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 uColor;
-        uniform float uTime;
-        varying vec2 vUv;
-        varying vec3 vNormal;
-        void main() {
-          // Vertical fade
-          float alpha = (1.0 - vUv.y) * 0.45;
-          // Scanlines
-          float scan = sin(vUv.y * 30.0 - uTime * 4.0) * 0.1 + 0.9;
-          gl_FragColor = vec4(uColor * scan, alpha);
-        }
-      `,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
+      opacity: 0.65,
       depthWrite: false
     });
+    this.magnetShadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+    this.magnetShadowMesh.rotation.x = -Math.PI / 2;
+    this.magnetShadowMesh.position.set(0, -0.04, 0);
+    this.arMagnetGroup.add(this.magnetShadowMesh);
 
-    this.lightBeam = new THREE.Mesh(coneGeo, beamMat);
-    this.lightBeam.position.set(0, 0.27, 0);
-    this.portalEmitter.add(this.lightBeam);
-
-    // 5. Four Corner Holographic Projector Nodes
-    const nodeGeo = new THREE.CylinderGeometry(0.012, 0.016, 0.015, 16);
-    const nodeMat = new THREE.MeshStandardMaterial({
-      color: 0xd4af37,
-      metalness: 0.9,
-      roughness: 0.2
-    });
-    const corners = [
-      [-0.17, -0.12],
-      [0.17, -0.12],
-      [-0.17, 0.12],
-      [0.17, 0.12]
-    ];
-    corners.forEach(([x, z]) => {
-      const node = new THREE.Mesh(nodeGeo, nodeMat);
-      node.position.set(x, 0.007, z);
-      this.portalEmitter.add(node);
-    });
-
-    this.arAnchor.add(this.portalEmitter);
-  }
-
-  // The 3D Floating Couple Hologram (The Centerpiece of the Experience!)
-  buildHologramCouple() {
-    this.hologramGroup = new THREE.Group();
-    // Floats right above the photo projection base
-    this.hologramGroup.position.set(0, 0.38, -0.065);
-
-    // 1. Load Couple Photo Texture
+    // 2. Load Couple Photo
     const textureLoader = new THREE.TextureLoader();
     this.photoTexture = textureLoader.load('/pengantin.jpg');
     this.photoTexture.anisotropy = 4;
 
-    // 2. Holographic Arch Display Shader Material
-    // Features moving scanlines, color tint, edge fresnel glow, and shimmer!
-    this.holoShaderMat = new THREE.ShaderMaterial({
+    // 3. Living Photo Shader:
+    // - Diagonal golden sunbeam sweep across mosque & couple
+    // - Twinkling star glints on the couple's songket embroidery
+    // - Magnetic perimeter energy glow
+    // - 3D parallax depth shift with camera tilt
+    this.magnetShaderMat = new THREE.ShaderMaterial({
       uniforms: {
         uTexture: { value: this.photoTexture },
         uTime: { value: 0 },
         uColor: { value: new THREE.Color(0xd4af37) },
-        uGlowIntensity: { value: 1.0 },
-        uHoloMix: { value: 0.45 }
+        uParallaxOffset: { value: new THREE.Vector2(0, 0) },
+        uMagneticIntensity: { value: 1.0 }
       },
       vertexShader: `
         varying vec2 vUv;
@@ -551,131 +481,118 @@ export class WeddingARScene {
         uniform sampler2D uTexture;
         uniform float uTime;
         uniform vec3 uColor;
-        uniform float uGlowIntensity;
-        uniform float uHoloMix;
+        uniform vec2 uParallaxOffset;
+        uniform float uMagneticIntensity;
         varying vec2 vUv;
         varying vec3 vNormal;
         varying vec3 vViewPosition;
 
         void main() {
-          // Sample couple image
-          vec4 texColor = texture2D(uTexture, vUv);
-
-          // Moving horizontal holographic scanlines
-          float scanline = sin(vUv.y * 70.0 - uTime * 3.5) * 0.12 + 0.88;
-
-          // Hologram shimmer flicker
-          float flicker = sin(uTime * 8.0) * 0.03 + 0.97;
-
-          // Fresnel rim glow
-          vec3 normal = normalize(vNormal);
+          // Dynamic 3D Parallax shift
           vec3 viewDir = normalize(vViewPosition);
-          float fresnel = pow(1.0 - abs(dot(viewDir, normal)), 2.2) * 1.4;
+          vec2 shiftedUv = vUv + uParallaxOffset * 0.03 + viewDir.xy * 0.015;
+          shiftedUv = clamp(shiftedUv, 0.001, 0.999);
 
-          // Mix photo with royal hologram glow
-          vec3 holoTint = mix(texColor.rgb, uColor * (texColor.r * 0.8 + 0.3), uHoloMix);
-          vec3 finalColor = (holoTint * scanline * flicker) + (uColor * fresnel * uGlowIntensity);
+          vec4 texColor = texture2D(uTexture, shiftedUv);
 
-          // Ethereal slight transparency
-          gl_FragColor = vec4(finalColor, 0.96);
+          // 1. Diagonal Sunbeam / Light Sweep across the mosque & couple
+          // Sweeps every 3.5 seconds diagonally
+          float sweepProgress = mod(uTime * 0.42, 1.8) - 0.4;
+          float sweepCoord = (vUv.x * 0.7 + (1.0 - vUv.y) * 0.3);
+          float sweepBand = smoothstep(0.0, 0.14, 0.14 - abs(sweepCoord - sweepProgress));
+          vec3 sunbeam = vec3(1.0, 0.94, 0.78) * sweepBand * 0.55;
+
+          // 2. Songket Sparkle Glints (twinkling star diamonds on songket fabric)
+          // Songket area: lower middle region of photo
+          float songketMask = smoothstep(0.05, 0.25, 1.0 - vUv.y) * (1.0 - smoothstep(0.65, 0.85, 1.0 - vUv.y));
+          float sparkle1 = sin(vUv.x * 140.0 + uTime * 6.0) * sin(vUv.y * 140.0 - uTime * 4.0);
+          float sparkle2 = sin(vUv.x * 100.0 - uTime * 5.0) * sin(vUv.y * 100.0 + uTime * 7.0);
+          float sparkleVal = max(0.0, pow(sparkle1 * sparkle2, 10.0)) * songketMask * 3.5;
+          vec3 sparkleColor = vec3(1.0, 0.98, 0.85) * sparkleVal;
+
+          // 3. Magnetic Edge Energy Glow
+          float borderX = min(vUv.x, 1.0 - vUv.x);
+          float borderY = min(vUv.y, 1.0 - vUv.y);
+          float borderDist = min(borderX, borderY);
+          float borderGlow = smoothstep(0.035, 0.001, borderDist) * (0.7 + sin(uTime * 4.0) * 0.3);
+          vec3 magneticRim = uColor * borderGlow * uMagneticIntensity;
+
+          // 4. Subtle Specular Sheen on tilt
+          float sheen = pow(1.0 - abs(dot(viewDir, normalize(vNormal))), 2.5) * 0.35;
+
+          vec3 finalColor = texColor.rgb + sunbeam + sparkleColor + magneticRim + (uColor * sheen);
+          gl_FragColor = vec4(finalColor, 1.0);
         }
       `,
-      transparent: true,
       side: THREE.DoubleSide
     });
 
-    // 3. Arched Plaque Geometry (Proportions 0.32m width x 0.42m height)
-    // Custom arched top shape
-    const archShape = new THREE.Shape();
-    const w = 0.16;
-    const h = 0.18;
-    const r = 0.16; // Arch radius at top
-    archShape.moveTo(-w, -h);
-    archShape.lineTo(w, -h);
-    archShape.lineTo(w, h * 0.5);
-    archShape.absarc(0, h * 0.5, r, 0, Math.PI, false);
-    archShape.lineTo(-w, -h);
-
-    const archGeo = new THREE.ShapeGeometry(archShape, 32);
+    // 4. The 3D Magnetic Plaque (Thick physical badge with rounded corners)
+    // Lies flat/horizontal over the card photo: X=width, Z=height, Y=thickness
+    const plaqueGeo = new THREE.BoxGeometry(magnetW, 0.008, magnetH);
     
-    // Fix UVs so photo fits perfectly into the arched shape
-    const pos = archGeo.attributes.position;
-    const uvs = [];
-    for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i);
-      const y = pos.getY(i);
-      const u = (x + w) / (w * 2);
-      const v = (y + h) / (h * 1.5 + r);
-      uvs.push(u, v);
-    }
-    archGeo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-
-    this.couplePlaque = new THREE.Mesh(archGeo, this.holoShaderMat);
-    this.hologramGroup.add(this.couplePlaque);
-
-    // 4. Royal Golden Arched Frame & Filigree Border
-    const frameEdges = new THREE.EdgesGeometry(archGeo);
-    const frameMat = new THREE.LineBasicMaterial({
-      color: 0xffe6a3,
-      linewidth: 3,
-      transparent: true,
-      opacity: 0.9
-    });
-    this.frameMesh = new THREE.LineSegments(frameEdges, frameMat);
-    this.frameMesh.scale.set(1.01, 1.01, 1.01);
-    this.hologramGroup.add(this.frameMesh);
-
-    // 5. Crown Crest atop the Arch
-    const crownGeo = new THREE.ConeGeometry(0.02, 0.035, 4);
-    const crownMat = new THREE.MeshStandardMaterial({
+    // Materials: top surface has living photo shader, sides/back have shiny gold metal
+    const goldFrameMat = new THREE.MeshStandardMaterial({
       color: 0xd4af37,
-      metalness: 0.9,
-      roughness: 0.2
+      metalness: 0.92,
+      roughness: 0.15
     });
-    const crown = new THREE.Mesh(crownGeo, crownMat);
-    crown.position.set(0, h * 0.5 + r + 0.018, 0);
-    crown.rotation.y = Math.PI / 4;
-    this.hologramGroup.add(crown);
 
-    // 6. Soft Backing Glow Plane (Ethereal Heavenly Aura)
-    const auraGeo = new THREE.PlaneGeometry(0.48, 0.58);
-    const auraCanvas = document.createElement('canvas');
-    auraCanvas.width = 128;
-    auraCanvas.height = 128;
-    const actx = auraCanvas.getContext('2d');
-    const agrad = actx.createRadialGradient(64, 64, 0, 64, 64, 64);
-    agrad.addColorStop(0, 'rgba(212, 175, 55, 0.6)');
-    agrad.addColorStop(0.5, 'rgba(212, 175, 55, 0.2)');
-    agrad.addColorStop(1, 'rgba(212, 175, 55, 0)');
-    actx.fillStyle = agrad;
-    actx.fillRect(0, 0, 128, 128);
+    const plaqueMaterials = [
+      goldFrameMat, // right
+      goldFrameMat, // left
+      this.magnetShaderMat, // top face (the photo!)
+      goldFrameMat, // bottom
+      goldFrameMat, // front
+      goldFrameMat  // back
+    ];
 
-    const auraTex = new THREE.CanvasTexture(auraCanvas);
-    const auraMat = new THREE.MeshBasicMaterial({
-      map: auraTex,
-      transparent: true,
-      opacity: 0.65,
-      blending: THREE.AdditiveBlending,
+    this.magnetPhotoMesh = new THREE.Mesh(plaqueGeo, plaqueMaterials);
+    this.magnetPhotoMesh.castShadow = true;
+    this.arMagnetGroup.add(this.magnetPhotoMesh);
+
+    // 5. 4 Corner Magnetic Brackets / Clips on the Photo
+    const clipGeo = new THREE.BoxGeometry(0.024, 0.012, 0.024);
+    const clipCorners = [
+      [-magnetW / 2 + 0.01, -magnetH / 2 + 0.01],
+      [magnetW / 2 - 0.01, -magnetH / 2 + 0.01],
+      [-magnetW / 2 + 0.01, magnetH / 2 - 0.01],
+      [magnetW / 2 - 0.01, magnetH / 2 - 0.01]
+    ];
+    clipCorners.forEach(([cx, cz]) => {
+      const clip = new THREE.Mesh(clipGeo, goldFrameMat);
+      clip.position.set(cx, 0.002, cz);
+      this.cornerClips.push(clip);
+      this.arMagnetGroup.add(clip);
+    });
+
+    // 6. Expanding Magnetic Field Wave Ring (radiates out periodically)
+    const waveGeo = new THREE.RingGeometry(magnetW * 0.45, magnetW * 0.47, 48);
+    const waveMat = new THREE.MeshBasicMaterial({
+      color: 0xd4af37,
       side: THREE.DoubleSide,
-      depthWrite: false
+      transparent: true,
+      opacity: 0.6,
+      blending: THREE.AdditiveBlending
     });
-    this.auraMesh = new THREE.Mesh(auraGeo, auraMat);
-    this.auraMesh.position.set(0, 0.05, -0.005);
-    this.hologramGroup.add(this.auraMesh);
+    this.magnetWaveMesh = new THREE.Mesh(waveGeo, waveMat);
+    this.magnetWaveMesh.rotation.x = -Math.PI / 2;
+    this.magnetWaveMesh.position.y = 0.006;
+    this.arMagnetGroup.add(this.magnetWaveMesh);
 
-    this.arAnchor.add(this.hologramGroup);
+    this.arAnchor.add(this.arMagnetGroup);
   }
 
-  // Floating 3D Typography & Greetings: "Selamat Pengantin Baharu!"
+  // Floating 3D Typography & Greetings: "✨ SELAMAT PENGANTIN BAHARU ✨"
   buildFloating3DGreetings() {
-    // 1. Top Curved Banner: "✨ SELAMAT PENGANTIN BAHARU ✨"
+    // 1. Top Arched Banner Floating Above the Magnetic Photo
     const topCanvas = document.createElement('canvas');
     topCanvas.width = 800;
     topCanvas.height = 200;
     const tCtx = topCanvas.getContext('2d');
 
-    // Royal Glass Pill Backing
-    tCtx.fillStyle = 'rgba(74, 14, 23, 0.88)';
+    // Royal Burgundy Pill Backing
+    tCtx.fillStyle = 'rgba(74, 14, 23, 0.92)';
     tCtx.beginPath();
     tCtx.roundRect(40, 20, 720, 160, 40);
     tCtx.fill();
@@ -698,15 +615,17 @@ export class WeddingARScene {
     tCtx.fillText('SELAMAT PENGANTIN BAHARU', 400, 135);
 
     const topTex = new THREE.CanvasTexture(topCanvas);
-    const topGeo = new THREE.PlaneGeometry(0.38, 0.095);
+    const topGeo = new THREE.PlaneGeometry(0.34, 0.085);
     const topMat = new THREE.MeshBasicMaterial({
       map: topTex,
       transparent: true,
       side: THREE.DoubleSide
     });
     this.topBanner = new THREE.Mesh(topGeo, topMat);
-    this.topBanner.position.set(0, 0.28, 0.03);
-    this.hologramGroup.add(this.topBanner);
+    // Floating angled right above the top edge of the photo
+    this.topBanner.position.set(0, 0.09, -0.22);
+    this.topBanner.rotation.x = -Math.PI / 6;
+    this.arAnchor.add(this.topBanner);
 
     // 2. Bottom Floating Name Plaque: "Arif & Haziqah"
     const btmCanvas = document.createElement('canvas');
@@ -714,7 +633,7 @@ export class WeddingARScene {
     btmCanvas.height = 180;
     const bCtx = btmCanvas.getContext('2d');
 
-    bCtx.fillStyle = 'rgba(10, 25, 20, 0.9)';
+    bCtx.fillStyle = 'rgba(10, 25, 20, 0.92)';
     bCtx.beginPath();
     bCtx.roundRect(30, 15, 640, 150, 35);
     bCtx.fill();
@@ -732,21 +651,23 @@ export class WeddingARScene {
 
     bCtx.fillStyle = '#d4af37';
     bCtx.font = '22px "Plus Jakarta Sans", sans-serif';
-    bCtx.fillText(`✨ ${this.weddingDate} • Kasih Abadi ✨`, 350, 125);
+    bCtx.fillText(`🧲 ${this.weddingDate} • Kasih Abadi 🧲`, 350, 125);
 
     const btmTex = new THREE.CanvasTexture(btmCanvas);
-    const btmGeo = new THREE.PlaneGeometry(0.34, 0.088);
+    const btmGeo = new THREE.PlaneGeometry(0.32, 0.082);
     const btmMat = new THREE.MeshBasicMaterial({
       map: btmTex,
       transparent: true,
       side: THREE.DoubleSide
     });
     this.btmPlaque = new THREE.Mesh(btmGeo, btmMat);
-    this.btmPlaque.position.set(0, -0.22, 0.03);
-    this.hologramGroup.add(this.btmPlaque);
+    // Floating angled right below the bottom edge of the photo
+    this.btmPlaque.position.set(0, 0.08, 0.085);
+    this.btmPlaque.rotation.x = -Math.PI / 8;
+    this.arAnchor.add(this.btmPlaque);
   }
 
-  // 3D Golden Hearts Orbiting the Hologram Couple
+  // 3D Golden Hearts Orbiting the AR Magnet Photo
   buildOrbitingHearts() {
     const heartShape = new THREE.Shape();
     heartShape.moveTo(0, 0);
@@ -757,7 +678,7 @@ export class WeddingARScene {
     heartShape.bezierCurveTo(0.065, 0, 0.065, -0.03, 0.04, -0.03);
     heartShape.bezierCurveTo(0.02, -0.03, 0, -0.01, 0, 0);
 
-    const extrudeSettings = { depth: 0.01, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: 0.005, bevelThickness: 0.005 };
+    const extrudeSettings = { depth: 0.008, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: 0.004, bevelThickness: 0.004 };
     const heartGeo = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
 
     const heartMat = new THREE.MeshStandardMaterial({
@@ -770,42 +691,41 @@ export class WeddingARScene {
 
     for (let i = 0; i < 4; i++) {
       const heartMesh = new THREE.Mesh(heartGeo, heartMat);
-      heartMesh.scale.set(0.25, 0.25, 0.25);
-      heartMesh.rotation.z = Math.PI; // right side up
+      heartMesh.scale.set(0.22, 0.22, 0.22);
+      heartMesh.rotation.z = Math.PI;
 
       const heartData = {
         mesh: heartMesh,
-        speed: 0.6 + i * 0.25,
-        radiusX: 0.24 + (i % 2) * 0.06,
-        radiusZ: 0.18 + (i % 2) * 0.05,
+        speed: 0.7 + i * 0.2,
+        radiusX: 0.22 + (i % 2) * 0.05,
+        radiusZ: 0.16 + (i % 2) * 0.04,
         phase: (i * Math.PI) / 2,
-        baseY: -0.05 + (i * 0.08)
+        baseY: 0.06 + (i * 0.02)
       };
 
       this.orbitingHearts.push(heartData);
-      this.hologramGroup.add(heartMesh);
+      this.arAnchor.add(heartMesh);
     }
   }
 
-  // 150+ Rising Golden Stardust Particles from Card to Hologram
+  // 150+ Rising Golden Stardust Particles from Magnet into the Air
   buildHologramParticles() {
-    const count = 180;
+    const count = 160;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(count * 3);
     const speeds = new Float32Array(count);
     const phases = new Float32Array(count);
 
     for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 0.32;
-      positions[i * 3 + 1] = Math.random() * 0.6;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 0.24;
-      speeds[i] = 0.08 + Math.random() * 0.18;
+      positions[i * 3] = (Math.random() - 0.5) * 0.36;
+      positions[i * 3 + 1] = Math.random() * 0.4;
+      positions[i * 3 + 2] = -0.065 + (Math.random() - 0.5) * 0.25;
+      speeds[i] = 0.06 + Math.random() * 0.14;
       phases[i] = Math.random() * Math.PI * 2;
     }
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-    // Particle Canvas Texture (Glow Dot)
     const pCanvas = document.createElement('canvas');
     pCanvas.width = 64;
     pCanvas.height = 64;
@@ -821,7 +741,7 @@ export class WeddingARScene {
     const pTexture = new THREE.CanvasTexture(pCanvas);
 
     const material = new THREE.PointsMaterial({
-      size: 0.024,
+      size: 0.022,
       map: pTexture,
       transparent: true,
       blending: THREE.AdditiveBlending,
@@ -830,63 +750,70 @@ export class WeddingARScene {
     });
 
     this.particleSystem = new THREE.Points(geometry, material);
-    this.particleSystem.position.set(0, 0, -0.065);
     this.particleSpeeds = speeds;
     this.particlePhases = phases;
     this.arAnchor.add(this.particleSystem);
   }
 
-  // Set Hologram Color Theme: 'gold' (Royal Gold), 'cyan' (Sci-Fi Cyber), 'ruby' (Royal Songket)
+  // =========================================================================
+  // AR MAGNET INTERACTION & SPRING SNAP PHYSICS
+  // =========================================================================
+  triggerMagneticSnap() {
+    this.isMagnetLocked = true;
+    weddingAudio.playMagneticSnap();
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate([25, 40, 25]);
+    }
+
+    // Magnetic Spring Pop Animation:
+    // Plaque snaps up with energetic spring bounce!
+    this.magnetScale = 1.14;
+    this.currentElevation = 0.085;
+    this.magnetSpringVelocity = 0.05;
+
+    // Pulse magnetic wave
+    if (this.magnetWaveMesh) {
+      this.magnetWaveMesh.scale.set(0.6, 0.6, 0.6);
+      this.magnetWaveMesh.material.opacity = 1.0;
+    }
+
+    // Voice greeting & confetti
+    weddingAudio.speakGreeting(this.coupleName);
+    confetti({
+      particleCount: 65,
+      spread: 75,
+      origin: { y: 0.65 },
+      colors: ['#d4af37', '#f3e5ab', '#b71c1c', '#ffffff', '#ffd700']
+    });
+  }
+
+  // Backwards compatible method
+  triggerHologramBurst() {
+    this.triggerMagneticSnap();
+  }
+
+  // Set Hologram / Magnet Color Theme: 'gold', 'cyan', 'ruby'
   setTheme(themeName) {
     if (!this.themeColors[themeName]) return;
     this.currentTheme = themeName;
     const t = this.themeColors[themeName];
 
-    // Update Hologram Shader
-    if (this.holoShaderMat) {
-      this.holoShaderMat.uniforms.uColor.value.setHex(t.primary);
+    if (this.magnetShaderMat) {
+      this.magnetShaderMat.uniforms.uColor.value.setHex(t.primary);
     }
-    // Update Light Beam
-    if (this.lightBeam && this.lightBeam.material) {
-      this.lightBeam.material.uniforms.uColor.value.setHex(t.primary);
+    if (this.magnetWaveMesh && this.magnetWaveMesh.material) {
+      this.magnetWaveMesh.material.color.setHex(t.primary);
     }
-    // Update Portal Rings
-    if (this.outerRing && this.outerRing.material) {
-      this.outerRing.material.color.setHex(t.primary);
-    }
-    if (this.holoPointLight) {
-      this.holoPointLight.color.setHex(t.primary);
+    if (this.magnetPointLight) {
+      this.magnetPointLight.color.setHex(t.primary);
     }
     if (this.particleSystem && this.particleSystem.material) {
       this.particleSystem.material.color.setHex(t.primary);
     }
 
-    weddingAudio.playThemeSwitch();
+    this.triggerMagneticSnap();
   }
 
-  // Trigger Celebration Burst (Confetti, Activation SFX, Voice Greeting)
-  triggerHologramBurst() {
-    weddingAudio.playHologramActivate();
-    weddingAudio.speakGreeting(this.coupleName);
-
-    // Confetti shower
-    confetti({
-      particleCount: 70,
-      spread: 80,
-      origin: { y: 0.6 },
-      colors: ['#d4af37', '#f3e5ab', '#b71c1c', '#ffffff', '#ffd700']
-    });
-
-    // Pulse hologram scale
-    if (this.hologramGroup) {
-      this.hologramGroup.scale.set(1.08, 1.08, 1.08);
-      setTimeout(() => {
-        if (this.hologramGroup) this.hologramGroup.scale.set(1.0, 1.0, 1.0);
-      }, 350);
-    }
-  }
-
-  // Toggle 360 Auto-Rotation
   toggleAutoRotate() {
     this.isAutoSpinning = !this.isAutoSpinning;
     if (this.controls) {
@@ -895,26 +822,24 @@ export class WeddingARScene {
     return this.isAutoSpinning;
   }
 
-  // Recenter Anchor in front of user
   recenterAnchor() {
     this.gyroManager.resetHeading();
     this.manualYaw = 0;
     this.manualPitch = 0;
     if (this.controls) {
       this.controls.reset();
-      this.camera.position.set(0, 0.85, 1.45);
-      this.camera.lookAt(0, 0.35, 0);
+      this.camera.position.set(0, 0.78, 1.25);
+      this.camera.lookAt(0, 0.22, 0);
     }
     weddingAudio.playThemeSwitch();
   }
 
-  // Switch between Camera AR Mode (Transparent overlay on camera) & Virtual 3D Table
   setCameraARMode(active) {
     this.isCameraActive = active;
     if (active) {
       this.virtualTable.visible = false;
       this.camera.position.set(0, 0.65, 1.15);
-      this.camera.lookAt(0, 0.3, 0);
+      this.camera.lookAt(0, 0.22, 0);
       if (this.controls) this.controls.enabled = false;
       this.gyroManager.startListening();
     } else {
@@ -924,7 +849,6 @@ export class WeddingARScene {
     }
   }
 
-  // Start Real Mobile/Desktop Camera Feed for WebAR
   async startCamera() {
     try {
       const constraints = {
@@ -962,7 +886,6 @@ export class WeddingARScene {
     this.setCameraARMode(false);
   }
 
-  // Snapshot Capture with High-Res Royal Watermark Frame
   captureSnapshot(coupleName = "Arif & Haziqah", tableInfo = "Meja 07 • Kasih Abadi") {
     const snapshotCanvas = document.createElement('canvas');
     const width = this.canvas.width;
@@ -971,7 +894,6 @@ export class WeddingARScene {
     snapshotCanvas.height = height;
     const ctx = snapshotCanvas.getContext('2d');
 
-    // 1. Draw camera video feed if active
     if (this.isCameraActive && this.video.readyState >= 2) {
       const vWidth = this.video.videoWidth;
       const vHeight = this.video.videoHeight;
@@ -1000,10 +922,9 @@ export class WeddingARScene {
       ctx.fillRect(0, 0, width, height);
     }
 
-    // 2. Overlay 3D WebGL Canvas
     ctx.drawImage(this.canvas, 0, 0);
 
-    // 3. Royal Gold Photo Frame
+    // Royal Gold Photo Frame
     ctx.strokeStyle = '#d4af37';
     ctx.lineWidth = Math.max(width * 0.008, 4);
     ctx.strokeRect(20, 20, width - 40, height - 40);
@@ -1012,7 +933,6 @@ export class WeddingARScene {
     ctx.lineWidth = 1.5;
     ctx.strokeRect(28, 28, width - 56, height - 56);
 
-    // 4. Bottom Watermark Plaque
     const bannerHeight = 90;
     const bannerY = height - 35 - bannerHeight;
     ctx.fillStyle = 'rgba(10, 20, 16, 0.88)';
@@ -1028,7 +948,7 @@ export class WeddingARScene {
 
     ctx.fillStyle = '#d4af37';
     ctx.font = `${Math.max(Math.floor(width * 0.024), 14)}px 'Plus Jakarta Sans', sans-serif`;
-    ctx.fillText(`✨ ${tableInfo} • Kenangan Hologram AR ✨`, width / 2, bannerY + 68);
+    ctx.fillText(`🧲 ${tableInfo} • Kenangan AR Magnet 🧲`, width / 2, bannerY + 68);
 
     return snapshotCanvas.toDataURL('image/png');
   }
@@ -1042,12 +962,20 @@ export class WeddingARScene {
       pointerStartX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
       pointerStartY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
       this.lastPointer = { x: pointerStartX, y: pointerStartY };
+
+      // Tap on AR Magnet to trigger magnetic pop & sound!
+      this.triggerMagneticSnap();
     };
 
     const onPointerMove = (e) => {
-      if (!this.isDragging || !this.isCameraActive) return;
       const curX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
       const curY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+
+      // Update normalized pointer (-1 to +1) for parallax
+      this.pointerNormalized.x = (curX / window.innerWidth) * 2 - 1;
+      this.pointerNormalized.y = -(curY / window.innerHeight) * 2 + 1;
+
+      if (!this.isDragging || !this.isCameraActive) return;
 
       const deltaX = (curX - this.lastPointer.x) * 0.005;
       const deltaY = (curY - this.lastPointer.y) * 0.005;
@@ -1101,64 +1029,91 @@ export class WeddingARScene {
       }
     }
 
-    // 2. Floating Levitation for Hologram Group
-    if (this.hologramGroup) {
-      this.hologramGroup.position.y = 0.38 + Math.sin(time * 2.0) * 0.012;
-      this.hologramGroup.rotation.y = Math.sin(time * 0.8) * 0.04;
+    // 2. AR Magnet Spring Physics (Bounce & Hover Levitation)
+    // Spring physics towards target elevation (0.045m)
+    const springK = 28.0;
+    const damping = 4.5;
+    const force = (this.targetElevation - this.currentElevation) * springK;
+    this.magnetSpringVelocity += (force - this.magnetSpringVelocity * damping) * delta;
+    this.currentElevation += this.magnetSpringVelocity * delta;
+
+    // Scale spring back to 1.0
+    this.magnetScale += (1.0 - this.magnetScale) * 0.12;
+
+    // Dynamic gentle levitation hover wave
+    const levitationWave = Math.sin(time * 2.5) * 0.003;
+    const finalY = this.currentElevation + levitationWave;
+
+    if (this.arMagnetGroup) {
+      this.arMagnetGroup.position.y = finalY;
+      this.arMagnetGroup.scale.set(this.magnetScale, this.magnetScale, this.magnetScale);
+
+      // Tilt parallax: tilts slightly based on pointer position / viewing angle
+      const targetTiltX = this.pointerNormalized.y * 0.15;
+      const targetTiltZ = -this.pointerNormalized.x * 0.15;
+      this.arMagnetGroup.rotation.x += (targetTiltX - this.arMagnetGroup.rotation.x) * 0.08;
+      this.arMagnetGroup.rotation.z += (targetTiltZ - this.arMagnetGroup.rotation.z) * 0.08;
+
+      // Update drop shadow scale & opacity based on elevation
+      if (this.magnetShadowMesh) {
+        const shadowDist = finalY / 0.045;
+        this.magnetShadowMesh.scale.set(1.0 + shadowDist * 0.15, 1.0 + shadowDist * 0.15, 1.0);
+        this.magnetShadowMesh.material.opacity = Math.max(0.2, 0.75 - shadowDist * 0.25);
+      }
     }
 
-    // 3. Update Hologram Shaders (Time uniform for scanlines)
-    if (this.holoShaderMat) {
-      this.holoShaderMat.uniforms.uTime.value = time;
-    }
-    if (this.lightBeam && this.lightBeam.material) {
-      this.lightBeam.material.uniforms.uTime.value = time;
+    // 3. Update Living Photo Shader Uniforms
+    if (this.magnetShaderMat) {
+      this.magnetShaderMat.uniforms.uTime.value = time;
+      this.magnetShaderMat.uniforms.uParallaxOffset.value.set(
+        this.pointerNormalized.x * 0.5,
+        this.pointerNormalized.y * 0.5
+      );
     }
 
-    // 4. Rotate Portal Emitter Rings
-    if (this.outerRing) {
-      this.outerRing.rotation.z = time * 0.35;
-    }
-    if (this.midRing) {
-      this.midRing.rotation.z = -time * 0.5;
-    }
-    if (this.coreDisc) {
-      const pulse = 1.0 + Math.sin(time * 3.5) * 0.12;
-      this.coreDisc.scale.set(pulse, pulse, pulse);
+    // 4. Expanding Magnetic Field Wave
+    if (this.magnetWaveMesh) {
+      this.magnetWaveMesh.scale.x += delta * 0.8;
+      this.magnetWaveMesh.scale.y += delta * 0.8;
+      this.magnetWaveMesh.material.opacity -= delta * 0.6;
+      if (this.magnetWaveMesh.material.opacity <= 0) {
+        this.magnetWaveMesh.scale.set(0.7, 0.7, 0.7);
+        this.magnetWaveMesh.material.opacity = 0.65;
+      }
     }
 
     // 5. Orbiting Hearts
     this.orbitingHearts.forEach(h => {
       const angle = time * h.speed + h.phase;
       const x = Math.sin(angle) * h.radiusX;
-      const z = Math.cos(angle) * h.radiusZ;
-      const y = h.baseY + Math.sin(time * 2.5 + h.phase) * 0.02;
+      const z = -0.065 + Math.cos(angle) * h.radiusZ;
+      const y = h.baseY + Math.sin(time * 2.5 + h.phase) * 0.015;
 
       h.mesh.position.set(x, y, z);
       h.mesh.rotation.y = angle + Math.PI / 2;
     });
 
-    // 6. Ascending Stardust Particles
+    // 6. Stardust Particles Rising From Magnet
     if (this.particleSystem) {
       const pos = this.particleSystem.geometry.attributes.position.array;
       const count = pos.length / 3;
 
       for (let i = 0; i < count; i++) {
         pos[i * 3 + 1] += this.particleSpeeds[i] * delta;
-        pos[i * 3] += Math.sin(time * 1.5 + this.particlePhases[i]) * 0.001;
+        pos[i * 3] += Math.sin(time * 1.5 + this.particlePhases[i]) * 0.0008;
 
-        if (pos[i * 3 + 1] > 0.65) {
-          pos[i * 3 + 1] = 0.02;
-          pos[i * 3] = (Math.random() - 0.5) * 0.32;
-          pos[i * 3 + 2] = (Math.random() - 0.5) * 0.24;
+        if (pos[i * 3 + 1] > 0.45) {
+          pos[i * 3 + 1] = 0.04;
+          pos[i * 3] = (Math.random() - 0.5) * 0.36;
+          pos[i * 3 + 2] = -0.065 + (Math.random() - 0.5) * 0.25;
         }
       }
       this.particleSystem.geometry.attributes.position.needsUpdate = true;
     }
 
     // 7. Beacon point light flicker
-    if (this.holoPointLight) {
-      this.holoPointLight.intensity = 2.4 + Math.sin(time * 6) * 0.35;
+    if (this.magnetPointLight) {
+      this.magnetPointLight.intensity = 2.2 + Math.sin(time * 5) * 0.3;
     }
 
     this.renderer.render(this.scene, this.camera);
