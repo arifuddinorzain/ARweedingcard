@@ -11,16 +11,71 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/src/style.css">
+
+    <!-- MindAR & A-Frame WebAR Image Tracking Engine (Stories AR Engine) -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   </head>
   <body>
     <div id="app">
-      <!-- MindAR WebGL & Video Container -->
-      <div id="ar-mindar-container" class="mindar-viewport hidden"></div>
+      <!-- Real-Time MindAR WebAR Scene (Computer Vision Image Target Tracking) -->
+      <div id="mindar-scene-container" class="hidden">
+        <a-scene
+          id="mindar-scene"
+          mindar-image="imageTargetSrc: /card.mind; autoStart: false; uiLoading: no; uiScanning: no;"
+          color-space="sRGB"
+          embedded
+          renderer="colorManagement: true, physicallyCorrectLights: true"
+          vr-mode-ui="enabled: false"
+          device-orientation-permission-ui="enabled: false"
+        >
+          <a-assets>
+            <img id="card-photo-target" src="/pengantin.jpg">
+            <canvas id="living-photo-canvas" width="800" height="600"></canvas>
+            <video id="custom-wedding-video" playsinline webkit-playsinline loop muted crossorigin="anonymous"></video>
+          </a-assets>
 
-      <!-- Fallback Background Video Feed for WebAR -->
-      <video id="ar-video-feed" playsinline autoplay muted></video>
+          <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- Three.js 3D WebGL Canvas -->
+          <!-- Image Target 0: Couple Photo (Brings static photo alive into moving picture!) -->
+          <a-entity id="mindar-target" mindar-image-target="targetIndex: 0">
+            <!-- Living Moving Photo Plane -->
+            <a-plane
+              id="ar-living-plane"
+              position="0 0 0.01"
+              height="0.75"
+              width="1.0"
+              material="src: #living-photo-canvas; shader: flat; transparent: true;"
+            ></a-plane>
+
+            <!-- Royal Gold Shimmer Border -->
+            <a-plane
+              position="0 0 0.005"
+              height="0.77"
+              width="1.02"
+              material="color: #d4af37; shader: flat; opacity: 0.85;"
+            ></a-plane>
+
+            <!-- Floating 3D Greeting Banner -->
+            <a-plane
+              id="ar-floating-banner"
+              position="0 0.48 0.05"
+              height="0.16"
+              width="0.9"
+            ></a-plane>
+
+            <!-- Floating Names Plaque -->
+            <a-plane
+              id="ar-floating-names"
+              position="0 -0.46 0.05"
+              height="0.12"
+              width="0.7"
+            ></a-plane>
+          </a-entity>
+        </a-scene>
+      </div>
+
+      <!-- Fallback Three.js 3D WebGL Canvas for 3D card preview -->
       <canvas id="ar-webgl-canvas"></canvas>
 
       <!-- Camera AR Card Scanner Viewfinder HUD -->

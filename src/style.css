@@ -667,7 +667,8 @@ html, body {
   background: rgba(212, 175, 55, 0.3);
 }
 
-.mindar-viewport {
+.mindar-viewport,
+#mindar-scene-container {
   position: absolute;
   top: 0;
   left: 0;
@@ -675,6 +676,18 @@ html, body {
   height: 100%;
   z-index: 1;
   overflow: hidden;
+}
+
+#mindar-scene-container.hidden {
+  display: none !important;
+}
+
+#mindar-scene {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 /* --------------------------------------------------------------------------

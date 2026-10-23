@@ -2,6 +2,7 @@ import { WeddingARScene } from './arScene.js';
 import { TableCardGenerator } from './qrGenerator.js';
 import { WishingWall } from './wishingWall.js';
 import { weddingAudio } from './audio.js';
+import { MindARController } from './mindarController.js';
 
 // Application State
 const appState = {
@@ -75,8 +76,21 @@ const btnShareSnap = document.getElementById('btn-share-snap');
 const arScene = new WeddingARScene(canvas, video, mindarContainer);
 const cardGen = new TableCardGenerator('generator-mount-point');
 const wishingWall = new WishingWall();
+const mindarCtrl = new MindARController(appState.weddingInfo.couple);
 
-// Callback when target image is found or lost by MindAR
+// Real-time Computer Vision Callback when target image is found or lost by MindAR
+mindarCtrl.onStatusChange = (found) => {
+  if (scannerStatusText) {
+    if (found) {
+      scannerStatusText.textContent = '✨ FOTO PENGANTIN DIKESAN! GAMBAR BERGERAK AKTIF ✨';
+      if (guidanceText) guidanceText.textContent = '✨ Foto pengantin dikesan! Saksikan gambar bergerak hidup tepat di atas kad anda!';
+    } else {
+      scannerStatusText.textContent = 'Mengesan Foto Pengantin Pada Kad...';
+      if (guidanceText) guidanceText.textContent = '📸 Halakan kamera ke arah gambar pengantin untuk saksikan gambar bergerak!';
+    }
+  }
+};
+
 arScene.onTargetStatusChange = (found) => {
   if (scannerStatusText) {
     if (found) {
@@ -116,22 +130,20 @@ async function setView(viewName) {
     arScannerOverlay?.classList.remove('hidden');
     welcomeModal?.classList.add('hidden');
 
-    const success = await arScene.startCamera();
-    if (success) {
-      guidanceText.textContent = '📸 Halakan kamera ke arah gambar pengantin untuk saksikan gambar bergerak!';
-      if (scannerStatusText) scannerStatusText.textContent = 'Mengesan Foto Pengantin...';
+    guidanceText.textContent = '📸 Halakan kamera ke arah gambar pengantin untuk saksikan gambar bergerak!';
+    if (scannerStatusText) scannerStatusText.textContent = 'Mengesan Foto Pengantin Pada Kad...';
 
-      // Auto-trigger living moving photo in 1.4 seconds when aimed at card
-      setTimeout(() => {
-        if (appState.currentView === 'ar-camera' && !arScene.isMagnetLocked) {
-          if (scannerStatusText) scannerStatusText.textContent = '✨ FOTO PENGANTIN DIKESAN! GAMBAR BERGERAK DIAKTIFKAN ✨';
-          arScene.triggerMagneticSnap();
-        }
-      }, 1400);
-    } else {
-      guidanceText.textContent = '📸 Sentuh skrin untuk membenarkan capaian kamera WebAR!';
-      if (scannerStatusText) scannerStatusText.textContent = 'Sentuh Untuk Buka Kamera';
-      arScannerOverlay?.classList.remove('hidden');
+    // 1. Start MindAR true computer vision image tracking (Stories AR Experience)
+    let mindarStarted = false;
+    try {
+      mindarStarted = await mindarCtrl.start();
+    } catch (e) {
+      console.warn('[MindAR] direct start deferred:', e);
+    }
+
+    if (!mindarStarted) {
+      // 2. Fallback to Three.js camera AR view
+      await arScene.startCamera();
     }
   } else if (viewName === 'virtual-3d') {
     tabBtnVirtual?.classList.add('active');
@@ -139,6 +151,7 @@ async function setView(viewName) {
     bottomHud?.classList.remove('hidden');
     arScannerOverlay?.classList.add('hidden');
 
+    mindarCtrl.stop();
     arScene.stopCamera();
     guidanceText.textContent = '🥂 Simulasi Kad 3D • Sentuh foto pengantin untuk melihat foto hidup & terapung!';
   } else if (viewName === 'table-card') {
@@ -146,6 +159,8 @@ async function setView(viewName) {
     cardGeneratorScreen?.classList.remove('hidden');
     bottomHud?.classList.add('hidden');
     arScannerOverlay?.classList.add('hidden');
+
+    mindarCtrl.stop();
     arScene.stopCamera();
     cardGen.renderCard();
   }
