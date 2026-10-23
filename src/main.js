@@ -80,11 +80,11 @@ const wishingWall = new WishingWall();
 arScene.onTargetStatusChange = (found) => {
   if (scannerStatusText) {
     if (found) {
-      scannerStatusText.textContent = '✨ KAD DIKESAN! ANIMASI 3D DIAKTIFKAN ✨';
-      if (guidanceText) guidanceText.textContent = '✨ Kad kahwin dikesan! Sentuh skrin untuk berinteraksi dengan animasi!';
+      scannerStatusText.textContent = '✨ FOTO PENGANTIN DIKESAN! GAMBAR BERGERAK DIAKTIFKAN ✨';
+      if (guidanceText) guidanceText.textContent = '✨ Foto dikesan! Saksikan gambar bergerak hidup dan sentuh untuk berinteraksi!';
     } else {
-      scannerStatusText.textContent = 'Mengesan Gambar Pada Kad Kahwin...';
-      if (guidanceText) guidanceText.textContent = '🧲 Halakan kamera ke gambar pengantin pada kad kahwin anda.';
+      scannerStatusText.textContent = 'Mengesan Foto Pengantin Pada Kad...';
+      if (guidanceText) guidanceText.textContent = '📸 Halakan kamera ke arah gambar pengantin untuk saksikan gambar bergerak!';
     }
   }
 };
@@ -370,8 +370,28 @@ window.addEventListener('switch-to-ar', (e) => {
 });
 
 // -----------------------------------------------------------------------------
-// 9. Start Application
+// 9. QR Code Initializer for Stories AR Hero Card
+// -----------------------------------------------------------------------------
+async function initStoriesDemoQR() {
+  const qrImg = document.getElementById('stories-hero-qr');
+  if (qrImg) {
+    const qrDataUrl = await cardGen.getQRCodeDataUrl();
+    qrImg.src = qrDataUrl;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 10. Start Application
 // -----------------------------------------------------------------------------
 initWeddingData();
-// Open in landing / virtual-3d mode
-setView('virtual-3d');
+initStoriesDemoQR();
+
+// If user arrived by scanning the QR code, jump straight to camera AR scanner!
+if (appState.weddingInfo.autoScan) {
+  welcomeModal?.classList.add('hidden');
+  setView('ar-camera');
+} else {
+  // Otherwise display the Stories AR Live Demo screen (Image 2)
+  welcomeModal?.classList.remove('hidden');
+  setView('virtual-3d');
+}

@@ -492,10 +492,18 @@ export class WeddingARScene {
         varying vec3 vViewPosition;
 
         void main() {
-          // Dynamic 3D Parallax shift
+          // Cinematic Breathing & Motion ("Gambar Bergerak"):
+          // Slow cinematic zoom loop (in & out breathing motion)
+          float zoom = 1.0 + sin(uTime * 0.75) * 0.045;
+          vec2 centeredUv = (vUv - 0.5) / zoom + 0.5;
+          
+          // Subtle gentle sway / drift
+          vec2 cinematicDrift = vec2(sin(uTime * 0.45) * 0.012, cos(uTime * 0.55) * 0.008);
+
+          // Dynamic 3D Parallax shift from viewer perspective
           vec3 viewDir = normalize(vViewPosition);
-          vec2 shiftedUv = vUv + uParallaxOffset * 0.03 + viewDir.xy * 0.015;
-          shiftedUv = clamp(shiftedUv, 0.001, 0.999);
+          vec2 shiftedUv = centeredUv + cinematicDrift + uParallaxOffset * 0.03 + viewDir.xy * 0.015;
+          shiftedUv = clamp(shiftedUv, 0.002, 0.998);
 
           vec4 texColor = texture2D(uTexture, shiftedUv);
 

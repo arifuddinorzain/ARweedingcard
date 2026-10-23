@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>AR Kad Kahwin — Demo Interaktif Image Tracking</title>
-    <meta name="description" content="AR Kad Kahwin: Imbas kad jemputan kahwin menggunakan kamera telefon dan saksikan foto pengantin hidup & terapung sebagai animasi 3D!" />
+    <title>WebAR Kad Kahwin — Try Live Demo & Animate Photo</title>
+    <meta name="description" content="Try WebAR right now — animate this photo! Imbas QR dengan telefon, halakan kamera ke foto pengantin dan saksikan gambar bergerak serta hidup dalam 3D!" />
     
-    <!-- Google Fonts: Cinzel, Playfair Display, Plus Jakarta Sans -->
+    <!-- Google Fonts: Inter, Plus Jakarta Sans, Playfair Display, Cinzel -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/src/style.css">
   </head>
   <body>
@@ -36,29 +36,29 @@
 
           <!-- Center Target Helper -->
           <div class="target-center-guide">
-            <span class="target-icon">🧲</span>
-            <span class="target-label">Halakan Ke Gambar Kad Kahwin</span>
+            <span class="target-icon">📸</span>
+            <span class="target-label">Halakan Ke Gambar Pengantin</span>
           </div>
         </div>
 
         <div class="scanner-status-pill" id="scanner-status-pill">
           <span class="scanner-dot"></span>
-          <span id="scanner-status-text">Mengesan Gambar Pada Kad Kahwin...</span>
+          <span id="scanner-status-text">Mengesan Foto Pengantin Pada Kad...</span>
         </div>
 
-        <button class="btn-snap-lock" id="btn-snap-lock" title="Kunci Posisi & Aktifkan Animasi 3D">
-          ✨ Kunci Posisi & Aktifkan Animasi 3D ✨
+        <button class="btn-snap-lock" id="btn-snap-lock" title="Kunci Posisi & Gerakkan Gambar">
+          ✨ Kunci Posisi & Gerakkan Gambar ✨
         </button>
       </div>
 
-      <!-- Top Royal Navigation Bar -->
+      <!-- Top Navigation Bar -->
       <header class="top-nav-bar">
         <div class="nav-branding">
           <button id="btn-exit-ar" class="icon-exit-btn" title="Kembali ke Menu Utama">
             ✕
           </button>
           <div class="wedding-title-stack">
-            <span class="wedding-label">AR KAD KAHWIN • DEMO</span>
+            <span class="wedding-label">WEBAR KAD KAHWIN • STORIES AR</span>
             <h1 class="couple-heading" id="header-couple-name">Arif & Haziqah</h1>
           </div>
         </div>
@@ -73,8 +73,8 @@
             <span id="music-icon">🎵</span>
           </button>
 
-          <button id="btn-toggle-generator" class="btn-gold-outline" title="Lihat Kad Jemputan & Marker QR">
-            🖨️ Kad & QR
+          <button id="btn-toggle-generator" class="btn-gold-outline" title="Cetak Kad Jemputan Fizikal">
+            🖨️ Kad Kahwin & QR
           </button>
         </div>
       </header>
@@ -89,7 +89,7 @@
             📸 Pengimbas Kamera AR
           </button>
           <button class="mode-pill-btn" data-view="table-card" id="tab-btn-card">
-            🖨️ Kad Kahwin & QR
+            🖨️ Cetak Kad Kahwin (Image 1)
           </button>
         </div>
       </div>
@@ -97,14 +97,13 @@
       <!-- AR Guidance Tooltip Banner -->
       <div class="ar-guidance-banner" id="ar-guidance">
         <div class="guidance-content">
-          <span class="guidance-icon">🧲</span>
-          <span class="guidance-text" id="guidance-text">Halakan kamera ke foto pengantin pada kad untuk melihat foto hidup & terapung sebagai AR Magnet!</span>
+          <span class="guidance-icon">✨</span>
+          <span class="guidance-text" id="guidance-text">Halakan kamera telefon ke gambar pengantin di kad untuk melihat gambar ini bergerak!</span>
         </div>
       </div>
 
       <!-- Bottom Floating Controls (HUD) -->
       <nav class="bottom-hud-bar" id="bottom-hud">
-        <!-- Hologram Style Filter Chips -->
         <div class="filter-chips-row">
           <button class="filter-chip active" data-theme="gold">👑 Emas Diraja</button>
           <button class="filter-chip" data-theme="cyan">💎 Kristal Maya</button>
@@ -114,22 +113,21 @@
           <button class="filter-chip" id="btn-recenter-anchor" title="Letakkan Semula Di Hadapan Anda">🎯 Reset Posisi</button>
         </div>
 
-        <!-- Main Action Buttons (Matching Infographic Screen 4) -->
         <div class="hud-action-grid">
           <!-- Pause / Play Animation Toggle -->
-          <button class="hud-circle-btn" id="btn-toggle-pause" title="Jeda atau Mainkan Animasi 3D">
+          <button class="hud-circle-btn" id="btn-toggle-pause" title="Jeda atau Mainkan Gambar Bergerak">
             <span class="hud-icon" id="pause-icon">⏸</span>
             <span class="hud-text" id="pause-text">Jeda</span>
           </button>
 
           <!-- Tap to Interact Button -->
-          <button class="hud-circle-btn" id="btn-tap-interact" title="Sentuh Untuk Interaksi (Tap to Interact)">
+          <button class="hud-circle-btn" id="btn-tap-interact" title="Sentuh Untuk Berinteraksi">
             <span class="hud-icon">👆</span>
             <span class="hud-text">Interaksi</span>
           </button>
 
           <!-- Primary Snapshot Shutter Button -->
-          <button class="hud-primary-snap" id="btn-take-snapshot" title="Tangkap Foto Bersama Animasi AR">
+          <button class="hud-primary-snap" id="btn-take-snapshot" title="Tangkap Foto Bersama Gambar Bergerak">
             <div class="snap-ring-outer">
               <div class="snap-ring-inner">
                 <span class="snap-icon">📸</span>
@@ -146,86 +144,93 @@
         </div>
       </nav>
 
-      <!-- Modal: Welcome / Landing Web AR Demo (Matching Infographic "Contoh Laman Web AR") -->
+      <!-- ======================================================================
+           HERO CARD: STORIES AR LIVE DEMO (EXACT REPLICA OF USER IMAGE 2)
+           ====================================================================== -->
       <div class="modal-backdrop" id="welcome-modal">
-        <div class="landing-demo-card glass-card">
-          <div class="landing-grid-layout">
-            <!-- Left Panel: Instructions & Start Buttons -->
-            <div class="landing-left-panel">
-              <div class="landing-badge">👑 AR KAD KAHWIN DEMO</div>
-              <h1 class="landing-title">Walimatulurus Arif & Haziqah</h1>
-              <p class="landing-subtitle">
-                Imbas gambar pada kad kahwin menggunakan kamera telefon pintar ➔ <strong>Animasi 3D & Ucapan Muncul di Atas Kad!</strong>
-              </p>
+        <div class="stories-ar-card">
+          <!-- Left Column: Target Photo with Corner Brackets -->
+          <div class="stories-photo-column">
+            <div class="stories-target-box">
+              <div class="stories-bracket top-left"></div>
+              <div class="stories-bracket top-right"></div>
+              <div class="stories-bracket bottom-left"></div>
+              <div class="stories-bracket bottom-right"></div>
 
-              <div class="demo-steps-list">
-                <div class="step-item">
-                  <div class="step-num">1</div>
-                  <div class="step-detail">
-                    <strong>Buka capaian kamera telefon</strong>
-                    <span>(Allow camera access pada pelayar anda)</span>
-                  </div>
-                </div>
+              <img src="/pengantin.jpg" alt="Target AR Couple Photo" class="stories-target-img" id="stories-target-preview" />
+              <div class="stories-photo-badge">
+                <span class="badge-dot"></span>
+                <span>FOTO SASARAN KAMERA AR</span>
+              </div>
+            </div>
+            <span class="stories-scan-hint">Halakan kamera telefon anda ke gambar di atas ini</span>
+          </div>
 
-                <div class="step-item">
-                  <div class="step-num">2</div>
-                  <div class="step-detail">
-                    <strong>Halakan kamera pada kad kahwin</strong>
-                    <span>(Point your camera at the wedding card photo)</span>
-                  </div>
-                </div>
+          <!-- Right Column: Content, 1-2-3 Steps, Live Demo CTA & QR Code -->
+          <div class="stories-content-column">
+            <!-- Live Demo Tag -->
+            <div class="stories-live-tag">
+              <span class="live-pulse-dot"></span>
+              <span>LIVE DEMO</span>
+            </div>
 
-                <div class="step-item">
-                  <div class="step-num">3</div>
-                  <div class="step-detail">
-                    <strong>Saksikan animasi 3D muncul!</strong>
-                    <span>(Foto hidup terapung bersama ucapan raja sehari)</span>
-                  </div>
-                </div>
+            <!-- Main Heading -->
+            <h1 class="stories-title">
+              Try WebAR right now — animate this photo
+            </h1>
+
+            <!-- Description -->
+            <p class="stories-description">
+              This is a real AR experience made for <strong>Walimatulurus Arif & Haziqah</strong>. Open it on your phone and point the camera at the photo — it will come to life.
+            </p>
+
+            <!-- 1 - 2 - 3 Steps -->
+            <div class="stories-steps-list">
+              <div class="stories-step-item">
+                <div class="step-circle">1</div>
+                <div class="step-text">Open the demo on your phone <span class="step-sub">(or scan the QR code)</span></div>
               </div>
 
-              <div class="landing-buttons-group">
-                <button class="btn-primary-gold btn-landing-start" id="btn-start-camera-experience">
-                  📸 Buka Kamera AR (Start Camera)
-                </button>
-                <button class="btn-welcome-secondary" id="btn-start-3d-experience">
-                  🥂 Cuba Mod Simulasi Kad 3D
-                </button>
-                <button class="btn-gold-outline" id="btn-landing-show-card">
-                  🖨️ Cetak / Muat Turun Kad Jemputan
-                </button>
+              <div class="stories-step-item">
+                <div class="step-circle">2</div>
+                <div class="step-text">Allow camera access</div>
+              </div>
+
+              <div class="stories-step-item">
+                <div class="step-circle">3</div>
+                <div class="step-text">Point at the photo — <strong>it comes alive!</strong></div>
               </div>
             </div>
 
-            <!-- Right Panel: Visual Preview of Card & 3D Pop-Out -->
-            <div class="landing-right-panel">
-              <div class="preview-mockup-frame">
-                <div class="mockup-header-bar">
-                  <span class="dot-red"></span>
-                  <span class="dot-yellow"></span>
-                  <span class="dot-green"></span>
-                  <span class="mockup-url">ar-kadkahwin.demo</span>
+            <!-- Action Row: Orange Pill Button + QR Code -->
+            <div class="stories-action-row">
+              <button class="btn-stories-orange" id="btn-start-camera-experience">
+                Open the live demo ➔
+              </button>
+
+              <div class="stories-qr-block">
+                <div class="qr-thumbnail-box">
+                  <img src="" alt="Scan QR to open WebAR" class="stories-qr-img" id="stories-hero-qr" />
                 </div>
-                <div class="mockup-media-container">
-                  <img src="/pengantin.jpg" alt="Kad Kahwin Target AR" class="mockup-card-img" />
-                  <div class="mockup-ar-tag">
-                    <span class="pulse-dot"></span>
-                    <span>TARGET IMAGE TRACKING</span>
-                  </div>
-                  <div class="mockup-floating-badge">
-                    <span>✨ SELAMAT PENGANTIN BAHARU ✨</span>
-                  </div>
-                </div>
-                <p class="mockup-caption">
-                  Contoh hasil: Foto pengantin di kad menjadi sasaran imbasan dan memaparkan animasi 3D.
-                </p>
+                <span class="qr-caption">or scan with your<br>phone camera</span>
               </div>
+            </div>
+
+            <!-- Secondary Actions -->
+            <div class="stories-secondary-links">
+              <button class="link-btn" id="btn-start-3d-experience">
+                🥂 Cuba Simulasi 3D Di Sini
+              </button>
+              <span class="link-divider">•</span>
+              <button class="link-btn" id="btn-landing-show-card">
+                🖨️ Cetak Kad Kahwin (Image 1)
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Printable Card Generator Screen Container -->
+      <!-- Printable Card Generator Screen Container (Image 1 Replica) -->
       <div class="generator-overlay-container hidden" id="card-generator-screen">
         <div id="generator-mount-point"></div>
       </div>
@@ -254,7 +259,7 @@
             <div class="preset-chips-row">
               <button type="button" class="preset-chip">Barakallahu lakuma ✨</button>
               <button type="button" class="preset-chip">Semoga kekal hingga ke Jannah 🤍</button>
-              <button type="button" class="preset-chip">Selamat Pengantin Baharu bro! 👑</button>
+              <button type="button" class="preset-chip">Selamat Pengantin Baharu! 👑</button>
             </div>
 
             <button type="submit" class="btn-primary-gold w-100">
@@ -277,7 +282,7 @@
           <div class="modal-header">
             <div class="modal-title-wrap">
               <span class="modal-badge">✨ KENANGAN AR KAD KAHWIN</span>
-              <h2>Foto Bersama Animasi Kad</h2>
+              <h2>Foto Bersama Gambar Bergerak</h2>
             </div>
             <button class="btn-close-modal" id="btn-close-snap">✕</button>
           </div>

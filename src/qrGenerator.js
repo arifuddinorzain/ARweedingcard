@@ -15,7 +15,7 @@ export class TableCardGenerator {
   }
 
   // Generates the current live WebAR URL for this specific table / wedding
-  generateTableUrl() {
+  generateTableUrl(autoScan = true) {
     const baseUrl = window.location.origin + window.location.pathname;
     const params = new URLSearchParams({
       couple: this.currentData.coupleName,
@@ -24,6 +24,9 @@ export class TableCardGenerator {
       date: this.currentData.weddingDate,
       venue: this.currentData.venue
     });
+    if (autoScan) {
+      params.set('scan', '1');
+    }
     return `${baseUrl}?${params.toString()}`;
   }
 
@@ -408,7 +411,8 @@ export class TableCardGenerator {
       theme: params.get('theme') || 'Kasih Abadi',
       date: params.get('date') || '24 Disember 2026',
       venue: params.get('venue') || 'Dewan Perdana Felda, Kuala Lumpur',
-      photoUrl: '/pengantin.jpg'
+      photoUrl: '/pengantin.jpg',
+      autoScan: params.get('scan') === '1' || params.has('scan') || params.has('ar')
     };
   }
 }
