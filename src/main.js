@@ -204,17 +204,8 @@ async function setView(viewName) {
 
 // -----------------------------------------------------------------------------
 function unlockWeddingVideoAudio() {
-  const vid = document.getElementById('custom-wedding-video');
-  if (vid) {
-    vid.muted = false;
-    vid.volume = 1.0;
-    const p = vid.play();
-    if (p !== undefined) {
-      p.then(() => {
-        vid.pause();
-        vid.currentTime = 0;
-      }).catch(() => {});
-    }
+  if (mindarCtrl) {
+    mindarCtrl.setupAudioPipeline();
   }
 }
 
