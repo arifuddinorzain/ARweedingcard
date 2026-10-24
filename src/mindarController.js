@@ -183,7 +183,7 @@ export class MindARController {
     if (!this.videoEl) return;
     this.videoEl.muted = false;
     this.videoEl.volume = 1.0;
-    if (this.isTargetFound && this.videoEl.paused) {
+    if (this.isTargetFound && (this.videoEl.paused || this.videoEl.muted)) {
       this.playWeddingVideo();
     }
   }
