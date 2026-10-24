@@ -209,20 +209,21 @@ function unlockWeddingVideoAudio() {
   if (vid) {
     vid.muted = false;
     vid.volume = 1.0;
-    // Prime synchronously within user gesture
+    // Only prime with play/pause if paused and target is not currently being viewed
     if (vid.paused && (!window.mindarCtrl || !window.mindarCtrl.isTargetFound)) {
-      try {
-        const p = vid.play();
-        if (p !== undefined) {
-          p.catch(() => {});
-        }
-        vid.pause();
-        vid.currentTime = 0;
-        vid.muted = false;
-        vid.volume = 1.0;
-        console.log('✅ [Main] Video audio primed cleanly & synchronously');
-      } catch (err) {
-        console.warn('⚠️ [Main] Video prime catch:', err);
+      const p = vid.play();
+      if (p !== undefined) {
+        p.then(() => {
+          if (!window.mindarCtrl || !window.mindarCtrl.isTargetFound) {
+            vid.pause();
+            vid.currentTime = 0;
+          }
+          vid.muted = false;
+          vid.volume = 1.0;
+          console.log('✅ [Main] Video audio primed cleanly by user click');
+        }).catch(err => {
+          console.warn('⚠️ [Main] Video prime catch:', err);
+        });
       }
     }
   }
@@ -320,17 +321,14 @@ btnToggleMusic?.addEventListener('click', () => {
   }
 });
 
-const primeGlobalAudio = () => {
+window.addEventListener('pointerdown', () => {
   weddingAudio.init();
   unlockWeddingVideoAudio();
-  if (window.mindarCtrl && window.mindarCtrl.videoEl) {
-    window.mindarCtrl.videoEl.muted = false;
-    window.mindarCtrl.videoEl.volume = 1.0;
-  }
-};
-['pointerdown', 'touchstart', 'click'].forEach(evt => {
-  window.addEventListener(evt, primeGlobalAudio, { passive: true });
-});
+}, { once: true });
+
+window.addEventListener('touchstart', () => {
+  unlockWeddingVideoAudio();
+}, { once: true });
 
 // -----------------------------------------------------------------------------
 // 6. Hologram Theme Chips (Gold, Cyan, Ruby)
@@ -479,14 +477,10 @@ async function initStoriesDemoQR() {
 initWeddingData();
 initStoriesDemoQR();
 
-// If user arrived by scanning the QR code, show 1-tap start CTA so browser grants full audio permissions
+// If user arrived by scanning the QR code, jump straight to camera AR scanner!
 if (appState.weddingInfo.autoScan) {
-  welcomeModal?.classList.remove('hidden');
-  if (btnStartCameraExperience) {
-    btnStartCameraExperience.innerHTML = '📸 Buka Kamera AR & Hidupkan Suara ➔';
-    btnStartCameraExperience.style.boxShadow = '0 0 25px rgba(255, 107, 0, 0.7)';
-  }
-  setView('virtual-3d');
+  welcomeModal?.classList.add('hidden');
+  setView('ar-camera');
 } else {
   // Otherwise display the Stories AR Live Demo screen (Image 2)
   welcomeModal?.classList.remove('hidden');
