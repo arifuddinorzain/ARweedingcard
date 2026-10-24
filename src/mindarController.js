@@ -32,13 +32,6 @@ export class MindARController {
     this.livingEngine = new LivingPhotoEngine('living-photo-canvas');
     this.isTracking = false;
     this.isTargetFound = false;
-    this.onStatusChange = null;
-
-    // Web Audio Pipeline nodes for robust auto-playing sound on mobile
-    this.audioSourceNode = null;
-    this.videoGainNode = null;
-    this.usingWebAudio = false;
-
     this.initVideoElement();
     this.initTextureCanvases();
     this.setupListeners();
@@ -58,40 +51,27 @@ export class MindARController {
     return this._coupleName || 'Arif & Fatikhah';
   }
 
-  setupAudioPipeline() {
-    if (!this.videoEl) return;
-
-    // 1. Initialize Web Audio Context
-    weddingAudio.init();
-    const ctx = weddingAudio.ctx;
-
-    // 2. Route video element audio stream into Web Audio GainNode
-    if (ctx && !this.audioSourceNode) {
-      try {
-        this.audioSourceNode = ctx.createMediaElementSource(this.videoEl);
-        this.videoGainNode = ctx.createGain();
-        // Start silent until target is detected
-        this.videoGainNode.gain.setValueAtTime(0.0, ctx.currentTime);
-        this.audioSourceNode.connect(this.videoGainNode);
-        this.videoGainNode.connect(ctx.destination);
-        this.usingWebAudio = true;
-        console.log('✅ [MindAR] Web Audio pipeline connected to wedding video');
-      } catch (err) {
-        console.warn('⚠️ [MindAR] Web Audio media element source fallback:', err);
-        this.usingWebAudio = false;
-      }
+  primeVideo() {
+    if (!this.videoEl) {
+      this.videoEl = document.getElementById('custom-wedding-video');
     }
+    weddingAudio.init();
 
-    // 3. Keep video playing in a continuous silent loop so browser autoplay never blocks it
-    this.videoEl.muted = false;
-    this.videoEl.volume = 1.0;
-    const playPromise = this.videoEl.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(err => {
-        console.warn('[MindAR] Initial play blocked, trying muted fallback:', err);
-        this.videoEl.muted = true;
-        this.videoEl.play().catch(() => {});
-      });
+    if (this.videoEl) {
+      this.videoEl.muted = false;
+      this.videoEl.volume = 1.0;
+      const playPromise = this.videoEl.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          this.videoEl.pause();
+          this.videoEl.currentTime = 0;
+          this.videoEl.muted = false;
+          this.videoEl.volume = 1.0;
+          console.log('✅ [MindAR] Video audio primed cleanly');
+        }).catch(err => {
+          console.warn('[MindAR] Video prime caught:', err);
+        });
+      }
     }
   }
 
@@ -190,9 +170,9 @@ export class MindARController {
       }
     });
 
-    // Auto-prime audio pipeline on any user touch/click
+    // Auto-prime video on any user touch/click
     const primeAudio = () => {
-      this.setupAudioPipeline();
+      this.primeVideo();
     };
     ['click', 'touchstart', 'touchend', 'pointerdown'].forEach(evt => {
       window.addEventListener(evt, primeAudio, { passive: true });
@@ -335,35 +315,27 @@ export class MindARController {
     // Stop synthesized background harp music so video audio is crystal clear
     weddingAudio.stopMusic();
 
-    // Resume AudioContext if suspended
-    if (weddingAudio.ctx && weddingAudio.ctx.state === 'suspended') {
-      weddingAudio.ctx.resume();
-    }
-
     // Rewind video to start cleanly from beginning
     try {
       this.videoEl.currentTime = 0;
     } catch (e) {}
 
-    // Ensure video is actively playing (seamlessly continues if already running in background)
-    if (this.videoEl.paused) {
-      const p = this.videoEl.play();
-      if (p !== undefined) {
-        p.catch(err => {
-          console.warn('[WeddingVideo] Play error, falling back to muted video:', err);
-          this.videoEl.muted = true;
-          this.videoEl.play().catch(() => {});
-        });
-      }
-    }
-
-    // AUTO ON AUDIO: Activate full volume through Web Audio GainNode & video volume
-    if (this.videoGainNode && weddingAudio.ctx) {
-      this.videoGainNode.gain.setValueAtTime(1.0, weddingAudio.ctx.currentTime);
-    }
+    // Ensure unmuted with full volume
+    this.videoEl.muted = false;
     this.videoEl.volume = 1.0;
-    if (this.videoEl.muted) {
+
+    try {
+      await this.videoEl.play();
       this.videoEl.muted = false;
+      this.videoEl.volume = 1.0;
+    } catch (err) {
+      console.warn('[WeddingVideo] Direct play with audio blocked, trying fallback:', err);
+      try {
+        this.videoEl.muted = true;
+        await this.videoEl.play();
+      } catch (e2) {
+        console.error('[WeddingVideo] Play fallback error:', e2);
+      }
     }
 
     // Launch smooth 1.2s cinematic dissolve from photo to video
@@ -371,22 +343,10 @@ export class MindARController {
   }
 
   pauseWeddingVideo() {
-    // 1. Immediately silence all audio
-    if (this.videoGainNode && weddingAudio.ctx) {
-      this.videoGainNode.gain.setValueAtTime(0.0, weddingAudio.ctx.currentTime);
+    if (this.videoEl && !this.videoEl.paused) {
+      this.videoEl.pause();
     }
-    if (this.videoEl) {
-      this.videoEl.volume = 0.0;
-    }
-
-    // 2. Hide video plane & reset visual dissolve back to still photo immediately
     this.resetSmoothTransition();
-
-    // CRITICAL FIX: Do NOT call this.videoEl.pause()!
-    // Keeping the media session active in a silent loop prevents mobile browsers (iOS Safari & Android Chrome)
-    // from revoking playback permissions.
-    // When the user points camera back at the photo, the video rewinds to 0 and audio un-mutes automatically
-    // without requiring any screen press!
   }
 
   async start() {
@@ -418,11 +378,7 @@ export class MindARController {
   }
 
   stop() {
-    // When leaving camera AR mode completely, silence audio and pause video
-    if (this.videoGainNode && weddingAudio.ctx) {
-      this.videoGainNode.gain.setValueAtTime(0.0, weddingAudio.ctx.currentTime);
-    }
-    if (this.videoEl) {
+    if (this.videoEl && !this.videoEl.paused) {
       this.videoEl.pause();
     }
     this.resetSmoothTransition();

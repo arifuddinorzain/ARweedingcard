@@ -204,23 +204,38 @@ async function setView(viewName) {
 
 // -----------------------------------------------------------------------------
 function unlockWeddingVideoAudio() {
-  if (mindarCtrl) {
-    mindarCtrl.setupAudioPipeline();
+  const vid = document.getElementById('custom-wedding-video');
+  if (vid) {
+    vid.muted = false;
+    vid.volume = 1.0;
+    const p = vid.play();
+    if (p !== undefined) {
+      p.then(() => {
+        vid.pause();
+        vid.currentTime = 0;
+        vid.muted = false;
+        vid.volume = 1.0;
+        console.log('✅ [Main] Video audio primed cleanly by user click');
+      }).catch(err => {
+        console.warn('⚠️ [Main] Video prime catch:', err);
+      });
+    }
   }
+  weddingAudio.init();
 }
 
 // -----------------------------------------------------------------------------
 // 3. Welcome / Landing Page Actions
 // -----------------------------------------------------------------------------
 btnStartCameraExperience?.addEventListener('click', async () => {
+  // 1. PRIME SYNCHRONOUSLY FIRST inside direct user gesture!
+  unlockWeddingVideoAudio();
+  weddingAudio.init();
+
+  // 2. Then proceed with gyro permission and camera view setup
   await arScene.gyroManager.requestPermission();
   welcomeModal?.classList.add('hidden');
-
-  // Pre-load and unlock wedding video audio with user tap gesture
-  unlockWeddingVideoAudio();
-
   await setView('ar-camera');
-  weddingAudio.init();
 });
 
 btnStart3dExperience?.addEventListener('click', () => {
@@ -415,8 +430,9 @@ formNewWish?.addEventListener('submit', (e) => {
 // 8. Navigation & Mode Switch Events
 // -----------------------------------------------------------------------------
 tabBtnCamera?.addEventListener('click', async () => {
-  await arScene.gyroManager.requestPermission();
   unlockWeddingVideoAudio();
+  weddingAudio.init();
+  await arScene.gyroManager.requestPermission();
   setView('ar-camera');
 });
 tabBtnVirtual?.addEventListener('click', () => setView('virtual-3d'));
