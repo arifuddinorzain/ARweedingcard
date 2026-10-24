@@ -83,7 +83,11 @@ window.mindarCtrl = mindarCtrl;
 mindarCtrl.onStatusChange = (found) => {
   if (scannerStatusText) {
     if (found) {
-      scannerStatusText.textContent = '✨ FOTO PENGANTIN DIKESAN! VIDEO KAHWIN BERMAIN ✨';
+      if (!appState.isSoundActive) {
+        scannerStatusText.textContent = '✨ FOTO DIKESAN! TEKAN 🔇 DI ATAS UNTUK SUARA ✨';
+      } else {
+        scannerStatusText.textContent = '✨ FOTO PENGANTIN DIKESAN! VIDEO & SUARA BERMAIN ✨';
+      }
       if (guidanceText) guidanceText.textContent = '🎬 Foto pengantin dikesan! Saksikan video kahwin bermain terus di atas kad anda!';
     } else {
       scannerStatusText.textContent = 'Mengesan Foto Pengantin Pada Kad...';
@@ -306,28 +310,47 @@ btnVoiceGreeting?.addEventListener('click', () => {
 });
 
 // -----------------------------------------------------------------------------
-// 5. Audio & Music Controller
+// 5. Audio & Master Sound Controller (High-contrast button, default sound OFF)
 // -----------------------------------------------------------------------------
-btnToggleMusic?.addEventListener('click', () => {
-  const isPlaying = weddingAudio.toggleMusic();
-  appState.isMusicPlaying = isPlaying;
-  musicIcon.textContent = isPlaying ? '🔊' : '🎵';
-  if (isPlaying) {
-    btnToggleMusic.style.borderColor = 'var(--color-gold-primary)';
-    btnToggleMusic.style.boxShadow = '0 0 12px var(--color-gold-glow)';
-  } else {
-    btnToggleMusic.style.borderColor = 'rgba(212, 175, 55, 0.4)';
-    btnToggleMusic.style.boxShadow = 'none';
+function updateSoundButtonUI(isActive) {
+  if (!btnToggleMusic || !musicIcon) return;
+  btnToggleMusic.classList.toggle('sound-active', isActive);
+  btnToggleMusic.classList.toggle('sound-muted', !isActive);
+  musicIcon.textContent = isActive ? '🔊' : '🔇';
+  btnToggleMusic.setAttribute('title', isActive ? 'Ketik untuk Senyapkan Suara (Mute)' : 'Ketik untuk Hidupkan Suara (Unmute)');
+
+  if (scannerStatusText && window.mindarCtrl && window.mindarCtrl.isTargetFound) {
+    if (isActive) {
+      scannerStatusText.textContent = '✨ FOTO PENGANTIN DIKESAN! VIDEO & SUARA BERMAIN ✨';
+    } else {
+      scannerStatusText.textContent = '✨ FOTO DIKESAN! TEKAN 🔇 DI ATAS UNTUK SUARA ✨';
+    }
   }
+}
+
+// Initial state: default sound is OFF (muted)
+appState.isSoundActive = false;
+updateSoundButtonUI(false);
+
+btnToggleMusic?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  appState.isSoundActive = !appState.isSoundActive;
+
+  if (window.mindarCtrl) {
+    window.mindarCtrl.setSoundActive(appState.isSoundActive);
+  }
+
+  if (appState.isSoundActive) {
+    weddingAudio.init();
+  }
+
+  updateSoundButtonUI(appState.isSoundActive);
 });
 
 window.addEventListener('pointerdown', () => {
-  weddingAudio.init();
-  unlockWeddingVideoAudio();
-}, { once: true });
-
-window.addEventListener('touchstart', () => {
-  unlockWeddingVideoAudio();
+  if (appState.isSoundActive) {
+    weddingAudio.init();
+  }
 }, { once: true });
 
 // -----------------------------------------------------------------------------
