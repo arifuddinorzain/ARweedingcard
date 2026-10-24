@@ -24,9 +24,19 @@ export class MindARController {
     this.soundIconEl = document.getElementById('video-sound-icon');
     this.soundTextEl = document.getElementById('video-sound-text');
 
+    // Video aspect fit toggle elements
+    this.fitToggleBtn = document.getElementById('btn-video-fit-toggle');
+    this.fitIconEl = document.getElementById('video-fit-icon');
+    this.fitTextEl = document.getElementById('video-fit-text');
+
     this.stillPlaneEl = document.getElementById('ar-still-photo-plane');
     this.shimmerPlaneEl = document.getElementById('ar-shimmer-plane');
+    this.borderPlaneEl = document.getElementById('ar-gold-border');
     this.fadeAnimId = null;
+
+    // Fit mode: 'cover' (matches image target size 100%) or 'widescreen' (original 16:9 ratio)
+    this.fitMode = 'cover';
+    this.targetAspect = 1.0; // 1024x1024 pengantin.jpg
 
     this.livingEngine = new LivingPhotoEngine('living-photo-canvas');
     this.isTracking = false;
@@ -49,8 +59,24 @@ export class MindARController {
       this.videoEl.loop = true;
       this.videoEl.preload = 'auto';
 
+      this.videoEl.addEventListener('loadedmetadata', () => {
+        this.fitVideoTextureToPlane();
+      });
+      this.videoEl.addEventListener('playing', () => {
+        this.fitVideoTextureToPlane();
+      });
+
       // Connect video to living engine fallback as well
       this.livingEngine.setCustomVideo(this.videoEl);
+    }
+
+    if (this.livingPlaneEl) {
+      this.livingPlaneEl.addEventListener('materialtextureloaded', () => {
+        this.fitVideoTextureToPlane();
+      });
+      this.livingPlaneEl.addEventListener('loaded', () => {
+        this.fitVideoTextureToPlane();
+      });
     }
   }
 
@@ -123,6 +149,12 @@ export class MindARController {
     this.soundToggleBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.toggleVideoAudio();
+    });
+
+    // Video fit mode toggle button click (Fit to Photo Frame vs Full 16:9)
+    this.fitToggleBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleVideoFitMode();
     });
 
     // Window tap/click unmutes video if browser initially started it muted
@@ -218,8 +250,110 @@ export class MindARController {
     if (this.videoEl) this.videoEl.volume = 0.0;
   }
 
+  fitVideoTextureToPlane() {
+    if (!this.livingPlaneEl || !this.videoEl) return;
+
+    const mesh = this.livingPlaneEl.getObject3D('mesh');
+    if (!mesh || !mesh.material) return;
+
+    const vWidth = this.videoEl.videoWidth || 1280;
+    const vHeight = this.videoEl.videoHeight || 720;
+    const vAspect = vWidth / vHeight; // e.g. 1.7777778 for 16:9 video
+
+    if (this.fitMode === 'cover') {
+      // 1. Plane matches target image size (1.0 x 1.0 square) 100%
+      this.livingPlaneEl.setAttribute('width', '1.0');
+      this.livingPlaneEl.setAttribute('height', '1.0');
+
+      if (this.stillPlaneEl) {
+        this.stillPlaneEl.setAttribute('width', '1.0');
+        this.stillPlaneEl.setAttribute('height', '1.0');
+      }
+      if (this.shimmerPlaneEl) {
+        this.shimmerPlaneEl.setAttribute('width', '1.0');
+        this.shimmerPlaneEl.setAttribute('height', '1.0');
+      }
+      if (this.borderPlaneEl) {
+        this.borderPlaneEl.setAttribute('width', '1.03');
+        this.borderPlaneEl.setAttribute('height', '1.03');
+      }
+      if (this.bannerPlaneEl) {
+        this.bannerPlaneEl.setAttribute('position', '0 0.62 0.05');
+      }
+      if (this.namesPlaneEl) {
+        this.namesPlaneEl.setAttribute('position', '0 -0.62 0.05');
+      }
+
+      // 2. Adjust video texture coordinates so center region fills the square plane without distortion
+      const map = mesh.material.map;
+      if (map) {
+        const pAspect = 1.0; // square target plane
+        if (vAspect > pAspect) {
+          const repeatX = pAspect / vAspect; // 720 / 1280 = 0.5625
+          const repeatY = 1.0;
+          const offsetX = (1.0 - repeatX) / 2; // 0.21875
+          map.repeat.set(repeatX, repeatY);
+          map.offset.set(offsetX, 0.0);
+        } else {
+          const repeatX = 1.0;
+          const repeatY = vAspect / pAspect;
+          const offsetY = (1.0 - repeatY) / 2;
+          map.repeat.set(repeatX, repeatY);
+          map.offset.set(0.0, offsetY);
+        }
+        map.matrixAutoUpdate = true;
+        map.needsUpdate = true;
+      }
+    } else {
+      // Widescreen 16:9 mode (full original video frame shown)
+      const planeH = (1.0 / vAspect).toFixed(3); // e.g. 0.563
+      this.livingPlaneEl.setAttribute('width', '1.0');
+      this.livingPlaneEl.setAttribute('height', planeH);
+
+      if (this.borderPlaneEl) {
+        this.borderPlaneEl.setAttribute('width', '1.03');
+        this.borderPlaneEl.setAttribute('height', (parseFloat(planeH) + 0.03).toFixed(3));
+      }
+      if (this.bannerPlaneEl) {
+        this.bannerPlaneEl.setAttribute('position', `0 ${(parseFloat(planeH) / 2 + 0.12).toFixed(3)} 0.05`);
+      }
+      if (this.namesPlaneEl) {
+        this.namesPlaneEl.setAttribute('position', `0 ${(-parseFloat(planeH) / 2 - 0.12).toFixed(3)} 0.05`);
+      }
+
+      const map = mesh.material.map;
+      if (map) {
+        map.repeat.set(1.0, 1.0);
+        map.offset.set(0.0, 0.0);
+        map.matrixAutoUpdate = true;
+        map.needsUpdate = true;
+      }
+    }
+  }
+
+  toggleVideoFitMode() {
+    this.fitMode = this.fitMode === 'cover' ? 'widescreen' : 'cover';
+    this.fitVideoTextureToPlane();
+    this.updateFitBadgeState();
+  }
+
+  updateFitBadgeState() {
+    if (this.fitIconEl && this.fitTextEl) {
+      if (this.fitMode === 'cover') {
+        this.fitIconEl.textContent = '📐';
+        this.fitTextEl.textContent = 'Padan Saiz Foto (1:1)';
+      } else {
+        this.fitIconEl.textContent = '📺';
+        this.fitTextEl.textContent = 'Nisbah Penuh (16:9)';
+      }
+    }
+  }
+
   async playWeddingVideo() {
     if (!this.videoEl) return;
+
+    // Ensure video texture is fitted to plane
+    this.fitVideoTextureToPlane();
 
     // Reset video to start cleanly
     this.videoEl.currentTime = 0;
@@ -336,6 +470,7 @@ export class MindARController {
         src: '#custom-wedding-video',
         shader: 'flat'
       });
+      setTimeout(() => this.fitVideoTextureToPlane(), 100);
     }
   }
 }

@@ -334,11 +334,12 @@ export class WeddingARScene {
       ctx.font = 'bold 36px serif';
       ctx.fillText(this.coupleName, 350, 140);
 
-      // Base printed photo placeholder on card
-      const photoX = 85;
-      const photoY = 165;
-      const photoW = 530;
-      const photoH = 370;
+      // Base printed photo placeholder on card (1:1 square matching pengantin.jpg)
+      const photoSize = 400;
+      const photoX = (700 - photoSize) / 2;
+      const photoY = 160;
+      const photoW = photoSize;
+      const photoH = photoSize;
 
       if (img && img.complete) {
         ctx.drawImage(img, photoX, photoY, photoW, photoH);
@@ -353,10 +354,10 @@ export class WeddingARScene {
 
       // AR Target Marker Tag
       ctx.fillStyle = 'rgba(74, 14, 23, 0.9)';
-      ctx.fillRect(photoX + 115, photoY + photoH - 32, 300, 28);
+      ctx.fillRect(photoX + 50, photoY + photoH - 32, 300, 28);
       ctx.strokeStyle = '#d4af37';
       ctx.lineWidth = 1.5;
-      ctx.strokeRect(photoX + 115, photoY + photoH - 32, 300, 28);
+      ctx.strokeRect(photoX + 50, photoY + photoH - 32, 300, 28);
       ctx.fillStyle = '#f3e5ab';
       ctx.font = 'bold 12px sans-serif';
       ctx.fillText('🧲 FOTO SASARAN AR MAGNET 🧲', 350, photoY + photoH - 13);
@@ -419,12 +420,11 @@ export class WeddingARScene {
   // =========================================================================
   buildARMagnetPhoto() {
     this.arMagnetGroup = new THREE.Group();
-    // Centered exactly over the photo on the card:
-    // (photo area on card: width ~0.318, height/length ~0.222, center at z = -0.065)
-    this.arMagnetGroup.position.set(0, 0.045, -0.065);
+    // Centered exactly over the 1:1 photo on the card:
+    this.arMagnetGroup.position.set(0, 0.045, -0.069);
 
-    const magnetW = 0.318;
-    const magnetH = 0.222;
+    const magnetW = 0.24;
+    const magnetH = 0.24;
 
     // 1. Dynamic Magnetic Soft Contact Shadow on Card Surface below
     const shadowCanvas = document.createElement('canvas');
@@ -526,7 +526,9 @@ export class WeddingARScene {
           shiftedUv = clamp(shiftedUv, 0.002, 0.998);
 
           vec4 photoColor = texture2D(uTexture, shiftedUv);
-          vec4 videoColor = texture2D(uVideoTexture, vUv);
+          // Center-crop video to fit 1:1 square without squashing 16:9 ratio
+          vec2 videoUv = vec2((vUv.x - 0.5) * (720.0 / 1280.0) + 0.5, vUv.y);
+          vec4 videoColor = texture2D(uVideoTexture, videoUv);
           vec4 texColor = mix(photoColor, videoColor, uBlendProgress);
 
           // 1. Diagonal Sunbeam / Light Sweep across the mosque & couple

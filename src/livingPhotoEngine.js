@@ -7,8 +7,8 @@
 export class LivingPhotoEngine {
   constructor(canvasId = 'living-photo-canvas') {
     this.canvas = document.getElementById(canvasId) || document.createElement('canvas');
-    this.canvas.width = 800;
-    this.canvas.height = 600;
+    this.canvas.width = 1000;
+    this.canvas.height = 1000;
     this.ctx = this.canvas.getContext('2d');
 
     this.img = new Image();
@@ -40,8 +40,8 @@ export class LivingPhotoEngine {
     this.petals = [];
     for (let i = 0; i < 16; i++) {
       this.petals.push({
-        x: Math.random() * 800,
-        y: Math.random() * 600,
+        x: Math.random() * 1000,
+        y: Math.random() * 1000,
         r: 3 + Math.random() * 4,
         speedY: 0.6 + Math.random() * 1.2,
         speedX: Math.sin(Math.random() * 5) * 0.4,
@@ -107,9 +107,24 @@ export class LivingPhotoEngine {
 
     ctx.clearRect(0, 0, w, h);
 
-    // 1. If custom video is playing, draw video frame
+    // 1. If custom video is playing, draw video frame (aspect-fit cover without squashing)
     if (this.customVideo && !this.customVideo.paused && this.customVideo.readyState >= 2) {
-      ctx.drawImage(this.customVideo, 0, 0, w, h);
+      const vw = this.customVideo.videoWidth || 1280;
+      const vh = this.customVideo.videoHeight || 720;
+      const vAspect = vw / vh;
+      const cAspect = w / h; // 1.0
+
+      let sx = 0, sy = 0, sWidth = vw, sHeight = vh;
+      if (vAspect > cAspect) {
+        // Video is wider than canvas -> crop left/right
+        sWidth = vh * cAspect;
+        sx = (vw - sWidth) / 2;
+      } else {
+        // Video is taller than canvas -> crop top/bottom
+        sHeight = vw / cAspect;
+        sy = (vh - sHeight) / 2;
+      }
+      ctx.drawImage(this.customVideo, sx, sy, sWidth, sHeight, 0, 0, w, h);
     } else if (this.isImgLoaded) {
       // 2. Cinematic Ken Burns Living Motion ("Gambar Bergerak"):
       // Breathing slow zoom loop: 1.00 to 1.07

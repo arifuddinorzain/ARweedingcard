@@ -125,10 +125,11 @@ export class TableCardGenerator {
       photoImg.onerror = resolve;
     });
 
-    const photoX = 140;
-    const photoY = 265;
-    const photoW = 720;
-    const photoH = 500;
+    const photoSize = 540;
+    const photoX = (1000 - photoSize) / 2;
+    const photoY = 255;
+    const photoW = photoSize;
+    const photoH = photoSize;
 
     // Photo shadow
     ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
@@ -152,10 +153,10 @@ export class TableCardGenerator {
 
     // AR Target Badge on Photo
     ctx.fillStyle = 'rgba(74, 14, 23, 0.92)';
-    ctx.fillRect(photoX + 160, photoY + photoH - 42, 400, 36);
+    ctx.fillRect(photoX + 70, photoY + photoH - 42, 400, 36);
     ctx.strokeStyle = '#d4af37';
     ctx.lineWidth = 2;
-    ctx.strokeRect(photoX + 160, photoY + photoH - 42, 400, 36);
+    ctx.strokeRect(photoX + 70, photoY + photoH - 42, 400, 36);
     ctx.fillStyle = '#f3e5ab';
     ctx.font = 'bold 15px "Plus Jakarta Sans", sans-serif';
     ctx.fillText('🧲 SASARAN KAMERA AR MAGNET 🧲', 500, photoY + photoH - 18);
@@ -163,7 +164,7 @@ export class TableCardGenerator {
     // 5. Instruction Banner
     ctx.fillStyle = '#aa820a';
     ctx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('▼ IMBAS KOD QR DI BAWAH & HALAKAN KAMERA KE FOTO DI ATAS ▼', 500, 810);
+    ctx.fillText('▼ IMBAS KOD QR DI BAWAH & HALAKAN KAMERA KE FOTO DI ATAS ▼', 500, 835);
 
     // 6. QR Code Section
     const qrDataUrl = await this.getQRCodeDataUrl();
@@ -174,9 +175,9 @@ export class TableCardGenerator {
       qrImg.onerror = resolve;
     });
 
-    const qrX = 370;
-    const qrY = 840;
-    const qrSize = 260;
+    const qrSize = 250;
+    const qrX = (1000 - qrSize) / 2;
+    const qrY = 860;
 
     // QR container box
     ctx.fillStyle = '#ffffff';
@@ -192,15 +193,15 @@ export class TableCardGenerator {
     // 7. Step-by-Step Instructions Text
     ctx.fillStyle = '#3a0810';
     ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('1. Imbas QR dengan telefon  •  2. Halakan kamera ke foto pengantin', 500, 1150);
+    ctx.fillText('1. Imbas QR dengan telefon  •  2. Halakan kamera ke foto pengantin', 500, 1145);
     ctx.fillStyle = '#6b1d28';
     ctx.font = 'italic 18px "Playfair Display", serif';
-    ctx.fillText('Saksikan Hologram 3D Pasangan Pengantin Muncul Membawa Ucapan Selamat Pengantin Baharu!', 500, 1180);
+    ctx.fillText('Saksikan Foto Pengantin Hidup & Video Kahwin Bermain Terus Di Atas Kad! ✨', 500, 1175);
 
     // 8. Footer Info
     ctx.fillStyle = '#aa820a';
     ctx.font = 'bold 22px "Playfair Display", serif';
-    ctx.fillText(`${this.currentData.weddingDate}  •  ${this.currentData.venue}`, 500, 1240);
+    ctx.fillText(`${this.currentData.weddingDate}  •  ${this.currentData.venue}`, 500, 1235);
 
     ctx.fillStyle = '#8c6d12';
     ctx.font = '14px "Cinzel", serif';

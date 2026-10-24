@@ -43,16 +43,16 @@
             <a-plane
               id="ar-still-photo-plane"
               position="0 0 0.008"
-              height="0.65"
+              height="1.0"
               width="1.0"
               material="src: #card-photo-target; shader: flat; transparent: true; opacity: 1.0;"
             ></a-plane>
 
-            <!-- 2. Video Layer (Starts with opacity 0, dissolves in smoothly) -->
+            <!-- 2. Video Layer (Fits the exact size of the image target) -->
             <a-plane
               id="ar-living-plane"
               position="0 0 0.010"
-              height="0.65"
+              height="1.0"
               width="1.0"
               material="src: #custom-wedding-video; shader: flat; transparent: true; opacity: 0.0;"
             ></a-plane>
@@ -61,23 +61,24 @@
             <a-plane
               id="ar-shimmer-plane"
               position="0 0 0.012"
-              height="0.65"
+              height="1.0"
               width="1.0"
               material="color: #ffd700; shader: flat; transparent: true; opacity: 0.0;"
             ></a-plane>
 
-            <!-- 4. Royal Gold Shimmer Border -->
+            <!-- 4. Royal Gold Shimmer Border (Frames exact photo size) -->
             <a-plane
+              id="ar-gold-border"
               position="0 0 0.005"
-              height="0.67"
-              width="1.02"
+              height="1.03"
+              width="1.03"
               material="color: #d4af37; shader: flat; opacity: 0.85;"
             ></a-plane>
 
             <!-- Floating 3D Greeting Banner -->
             <a-plane
               id="ar-floating-banner"
-              position="0 0.44 0.05"
+              position="0 0.62 0.05"
               height="0.16"
               width="0.9"
             ></a-plane>
@@ -85,7 +86,7 @@
             <!-- Floating Names Plaque -->
             <a-plane
               id="ar-floating-names"
-              position="0 -0.44 0.05"
+              position="0 -0.62 0.05"
               height="0.12"
               width="0.7"
             ></a-plane>
@@ -109,11 +110,15 @@
           <div class="scanner-laser-line"></div>
         </div>
 
-        <!-- Video Audio State Floating Pill -->
+        <!-- Video Audio & Aspect Fit Controls Floating Pill -->
         <div class="video-audio-badge hidden" id="video-audio-badge">
           <button id="btn-video-audio-toggle" class="video-sound-pill" title="Pasang / Matikan Suara Video">
             <span id="video-sound-icon">🔊</span>
-            <span id="video-sound-text">Video Pengantin Aktif</span>
+            <span id="video-sound-text">Suara Video</span>
+          </button>
+          <button id="btn-video-fit-toggle" class="video-sound-pill video-fit-pill" title="Tukar Saiz: Padan Foto / Penuh Video">
+            <span id="video-fit-icon">📐</span>
+            <span id="video-fit-text">Padan Saiz Foto (1:1)</span>
           </button>
         </div>
 
