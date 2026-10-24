@@ -476,9 +476,12 @@ export class WeddingARScene {
     // - Twinkling star glints on the couple's songket embroidery
     // - Magnetic perimeter energy glow
     // - 3D parallax depth shift with camera tilt
+    // - Smooth crossfade dissolve into videokahwin.mp4
     this.magnetShaderMat = new THREE.ShaderMaterial({
       uniforms: {
         uTexture: { value: this.photoTexture },
+        uVideoTexture: { value: this.videoTexture },
+        uBlendProgress: { value: 0.0 },
         uTime: { value: 0 },
         uColor: { value: new THREE.Color(0xd4af37) },
         uParallaxOffset: { value: new THREE.Vector2(0, 0) },
@@ -498,6 +501,8 @@ export class WeddingARScene {
       `,
       fragmentShader: `
         uniform sampler2D uTexture;
+        uniform sampler2D uVideoTexture;
+        uniform float uBlendProgress;
         uniform float uTime;
         uniform vec3 uColor;
         uniform vec2 uParallaxOffset;
@@ -520,7 +525,9 @@ export class WeddingARScene {
           vec2 shiftedUv = centeredUv + cinematicDrift + uParallaxOffset * 0.03 + viewDir.xy * 0.015;
           shiftedUv = clamp(shiftedUv, 0.002, 0.998);
 
-          vec4 texColor = texture2D(uTexture, shiftedUv);
+          vec4 photoColor = texture2D(uTexture, shiftedUv);
+          vec4 videoColor = texture2D(uVideoTexture, vUv);
+          vec4 texColor = mix(photoColor, videoColor, uBlendProgress);
 
           // 1. Diagonal Sunbeam / Light Sweep across the mosque & couple
           // Sweeps every 3.5 seconds diagonally
@@ -784,23 +791,58 @@ export class WeddingARScene {
 
   toggle3DWeddingVideo() {
     if (!this.weddingVideoEl) return;
+    if (this.fadeAnimId3D) {
+      cancelAnimationFrame(this.fadeAnimId3D);
+      this.fadeAnimId3D = null;
+    }
+
     if (this.isVideoPlayingIn3D) {
-      this.weddingVideoEl.pause();
-      if (this.magnetShaderMat) {
-        this.magnetShaderMat.uniforms.uTexture.value = this.photoTexture;
-      }
-      this.isVideoPlayingIn3D = false;
+      // Fade back to still photo smoothly
+      const startProg = this.magnetShaderMat ? this.magnetShaderMat.uniforms.uBlendProgress.value : 1.0;
+      const startTime = performance.now();
+      const dur = 800;
+
+      const fadeOut = (now) => {
+        const p = Math.min((now - startTime) / dur, 1.0);
+        if (this.magnetShaderMat) {
+          this.magnetShaderMat.uniforms.uBlendProgress.value = startProg * (1.0 - p);
+        }
+        if (p < 1.0) {
+          this.fadeAnimId3D = requestAnimationFrame(fadeOut);
+        } else {
+          this.weddingVideoEl.pause();
+          this.isVideoPlayingIn3D = false;
+          this.fadeAnimId3D = null;
+        }
+      };
+      this.fadeAnimId3D = requestAnimationFrame(fadeOut);
     } else {
       weddingAudio.stopMusic();
+      this.weddingVideoEl.currentTime = 0;
       this.weddingVideoEl.muted = false;
       this.weddingVideoEl.play().catch(() => {
         this.weddingVideoEl.muted = true;
         this.weddingVideoEl.play();
       });
-      if (this.magnetShaderMat) {
-        this.magnetShaderMat.uniforms.uTexture.value = this.videoTexture;
-      }
       this.isVideoPlayingIn3D = true;
+
+      // Smooth cinematic dissolve from photo (0.0) to video (1.0)
+      const startTime = performance.now();
+      const dur = 1300; // 1.3s smooth dissolve
+
+      const fadeIn = (now) => {
+        const p = Math.min((now - startTime) / dur, 1.0);
+        const ease = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+        if (this.magnetShaderMat) {
+          this.magnetShaderMat.uniforms.uBlendProgress.value = ease;
+        }
+        if (p < 1.0) {
+          this.fadeAnimId3D = requestAnimationFrame(fadeIn);
+        } else {
+          this.fadeAnimId3D = null;
+        }
+      };
+      this.fadeAnimId3D = requestAnimationFrame(fadeIn);
     }
   }
 

@@ -24,6 +24,10 @@ export class MindARController {
     this.soundIconEl = document.getElementById('video-sound-icon');
     this.soundTextEl = document.getElementById('video-sound-text');
 
+    this.stillPlaneEl = document.getElementById('ar-still-photo-plane');
+    this.shimmerPlaneEl = document.getElementById('ar-shimmer-plane');
+    this.fadeAnimId = null;
+
     this.livingEngine = new LivingPhotoEngine('living-photo-canvas');
     this.isTracking = false;
     this.isTargetFound = false;
@@ -81,11 +85,11 @@ export class MindARController {
     if (!this.targetEl) return;
 
     this.targetEl.addEventListener('targetFound', () => {
-      console.log('✨ [MindAR] Image Target Found! Playing videokahwin.mp4 on couple photo!');
+      console.log('✨ [MindAR] Image Target Found! Smooth cinematic transition from photo to video starting!');
       this.isTargetFound = true;
       this.livingEngine.start();
 
-      // Automatically play videokahwin.mp4 right on the photo!
+      // Start smooth dissolve from still photo into playing video
       this.playWeddingVideo();
 
       weddingAudio.playMagneticSnap();
@@ -107,7 +111,7 @@ export class MindARController {
       console.log('ℹ️ [MindAR] Image Target Lost, pausing video');
       this.isTargetFound = false;
 
-      // Pause video when user turns camera away
+      // Pause video and reset transition
       this.pauseWeddingVideo();
 
       if (this.onStatusChange) {
@@ -130,16 +134,95 @@ export class MindARController {
     }, { passive: true });
   }
 
+  // =========================================================================
+  // CINEMATIC SMOOTH TRANSITION: Still Photo ➔ Playing Wedding Video
+  // Dissolves seamlessly with breathing scale & golden shimmer light sweep
+  // =========================================================================
+  startSmoothTransition() {
+    if (this.fadeAnimId) {
+      cancelAnimationFrame(this.fadeAnimId);
+      this.fadeAnimId = null;
+    }
+
+    const duration = 1400; // 1.4 seconds smooth cinematic dissolve
+    const startTime = performance.now();
+
+    // Start video audio at 0 for smooth volume fade-in
+    if (this.videoEl) {
+      this.videoEl.volume = 0;
+    }
+
+    const animateDissolve = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1.0);
+
+      // Smooth easeInOutCubic curve
+      const ease = progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+      // 1. Fade Video Plane IN (0 -> 1)
+      if (this.livingPlaneEl) {
+        this.livingPlaneEl.setAttribute('material', 'opacity', ease.toFixed(3));
+      }
+
+      // 2. Fade Still Photo Layer OUT (1 -> 0)
+      if (this.stillPlaneEl) {
+        this.stillPlaneEl.setAttribute('material', 'opacity', (1.0 - ease).toFixed(3));
+      }
+
+      // 3. Audio volume smooth fade-in (0 -> 1)
+      if (this.videoEl && !this.videoEl.muted) {
+        this.videoEl.volume = Math.min(ease, 1.0);
+      }
+
+      // 4. Golden Shimmer Light Glow: peaks at ~35% of transition, then gently fades
+      if (this.shimmerPlaneEl) {
+        const shimmerPeak = Math.sin(progress * Math.PI);
+        const shimmerOpacity = Math.pow(shimmerPeak, 2) * 0.42;
+        this.shimmerPlaneEl.setAttribute('material', 'opacity', shimmerOpacity.toFixed(3));
+      }
+
+      // 5. Subtle "picture coming to life" gentle breathing scale
+      if (this.targetEl) {
+        const breathScale = 1.0 + Math.sin(progress * Math.PI) * 0.035;
+        this.targetEl.setAttribute('scale', `${breathScale.toFixed(3)} ${breathScale.toFixed(3)} ${breathScale.toFixed(3)}`);
+      }
+
+      if (progress < 1.0) {
+        this.fadeAnimId = requestAnimationFrame(animateDissolve);
+      } else {
+        // Final State: pure video playing at 100%
+        if (this.stillPlaneEl) this.stillPlaneEl.setAttribute('material', 'opacity', '0');
+        if (this.livingPlaneEl) this.livingPlaneEl.setAttribute('material', 'opacity', '1');
+        if (this.shimmerPlaneEl) this.shimmerPlaneEl.setAttribute('material', 'opacity', '0');
+        if (this.targetEl) this.targetEl.setAttribute('scale', '1 1 1');
+        if (this.videoEl) this.videoEl.volume = 1.0;
+        this.fadeAnimId = null;
+      }
+    };
+
+    this.fadeAnimId = requestAnimationFrame(animateDissolve);
+  }
+
+  resetSmoothTransition() {
+    if (this.fadeAnimId) {
+      cancelAnimationFrame(this.fadeAnimId);
+      this.fadeAnimId = null;
+    }
+    // Instantly reset so next scan starts cleanly from the still photo
+    if (this.stillPlaneEl) this.stillPlaneEl.setAttribute('material', 'opacity', '1.0');
+    if (this.livingPlaneEl) this.livingPlaneEl.setAttribute('material', 'opacity', '0.0');
+    if (this.shimmerPlaneEl) this.shimmerPlaneEl.setAttribute('material', 'opacity', '0.0');
+    if (this.targetEl) this.targetEl.setAttribute('scale', '1 1 1');
+    if (this.videoEl) this.videoEl.volume = 0.0;
+  }
+
   async playWeddingVideo() {
     if (!this.videoEl) return;
 
-    // Attach video directly as material src for high-performance GPU video plane
-    if (this.livingPlaneEl) {
-      this.livingPlaneEl.setAttribute('material', {
-        src: '#custom-wedding-video',
-        shader: 'flat'
-      });
-    }
+    // Reset video to start cleanly
+    this.videoEl.currentTime = 0;
 
     // Stop synthesized background music so wedding video audio can play clearly
     weddingAudio.stopMusic();
@@ -160,6 +243,9 @@ export class MindARController {
       }
     }
 
+    // Launch smooth 1.4s cinematic dissolve from photo to video
+    this.startSmoothTransition();
+
     if (this.audioBadgeEl) {
       this.audioBadgeEl.classList.remove('hidden');
     }
@@ -169,6 +255,7 @@ export class MindARController {
     if (this.videoEl && !this.videoEl.paused) {
       this.videoEl.pause();
     }
+    this.resetSmoothTransition();
     if (this.audioBadgeEl) {
       this.audioBadgeEl.classList.add('hidden');
     }
@@ -177,6 +264,9 @@ export class MindARController {
   toggleVideoAudio() {
     if (!this.videoEl) return;
     this.videoEl.muted = !this.videoEl.muted;
+    if (!this.videoEl.muted) {
+      this.videoEl.volume = 1.0;
+    }
     this.updateAudioBadgeState(!this.videoEl.muted);
   }
 

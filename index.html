@@ -39,16 +39,34 @@
 
           <!-- Image Target 0: Couple Photo (Brings static photo alive into moving picture!) -->
           <a-entity id="mindar-target" mindar-image-target="targetIndex: 0">
-            <!-- Living Moving Photo & Video Plane -->
+            <!-- 1. Still Photo Layer (Matches physical card photo 100% initially) -->
             <a-plane
-              id="ar-living-plane"
-              position="0 0 0.01"
+              id="ar-still-photo-plane"
+              position="0 0 0.008"
               height="0.65"
               width="1.0"
-              material="src: #custom-wedding-video; shader: flat; transparent: false;"
+              material="src: #card-photo-target; shader: flat; transparent: true; opacity: 1.0;"
             ></a-plane>
 
-            <!-- Royal Gold Shimmer Border -->
+            <!-- 2. Video Layer (Starts with opacity 0, dissolves in smoothly) -->
+            <a-plane
+              id="ar-living-plane"
+              position="0 0 0.010"
+              height="0.65"
+              width="1.0"
+              material="src: #custom-wedding-video; shader: flat; transparent: true; opacity: 0.0;"
+            ></a-plane>
+
+            <!-- 3. Magical Golden Shimmer Transition Layer -->
+            <a-plane
+              id="ar-shimmer-plane"
+              position="0 0 0.012"
+              height="0.65"
+              width="1.0"
+              material="color: #ffd700; shader: flat; transparent: true; opacity: 0.0;"
+            ></a-plane>
+
+            <!-- 4. Royal Gold Shimmer Border -->
             <a-plane
               position="0 0 0.005"
               height="0.67"
