@@ -179,72 +179,34 @@ export class MindARController {
     });
   }
 
-  // =========================================================================
-  // CINEMATIC SMOOTH TRANSITION: Still Photo ➔ Playing Wedding Video
-  // Dissolves seamlessly with breathing scale & golden shimmer light sweep
-  // =========================================================================
-  startSmoothTransition() {
-    if (this.fadeAnimId) {
-      cancelAnimationFrame(this.fadeAnimId);
-      this.fadeAnimId = null;
+  primeVideo() {
+    if (!this.videoEl) return;
+    this.videoEl.muted = false;
+    this.videoEl.volume = 1.0;
+    if (this.isTargetFound && this.videoEl.paused) {
+      this.playWeddingVideo();
     }
-
-    const duration = 1200; // 1.2 seconds smooth cinematic dissolve
-    const startTime = performance.now();
-
-    const animateDissolve = (now) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1.0);
-
-      // Smooth easeInOutCubic curve
-      const ease = progress < 0.5
-        ? 4 * progress * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-
-      // 1. Fade Video Plane IN (0 -> 1)
-      if (this.livingPlaneEl) {
-        this.livingPlaneEl.setAttribute('material', 'opacity', ease.toFixed(3));
-      }
-
-      // 2. Fade Still Photo Layer OUT (1 -> 0)
-      if (this.stillPlaneEl) {
-        this.stillPlaneEl.setAttribute('material', 'opacity', (1.0 - ease).toFixed(3));
-      }
-
-      // 3. Golden Shimmer Light Glow: peaks at ~35% of transition, then gently fades
-      if (this.shimmerPlaneEl) {
-        const shimmerPeak = Math.sin(progress * Math.PI);
-        const shimmerOpacity = Math.pow(shimmerPeak, 2) * 0.42;
-        this.shimmerPlaneEl.setAttribute('material', 'opacity', shimmerOpacity.toFixed(3));
-      }
-
-      // 4. Subtle "picture coming to life" gentle breathing scale
-      if (this.targetEl) {
-        const breathScale = 1.0 + Math.sin(progress * Math.PI) * 0.035;
-        this.targetEl.setAttribute('scale', `${breathScale.toFixed(3)} ${breathScale.toFixed(3)} ${breathScale.toFixed(3)}`);
-      }
-
-      if (progress < 1.0) {
-        this.fadeAnimId = requestAnimationFrame(animateDissolve);
-      } else {
-        // Final State: pure video playing at 100%
-        if (this.stillPlaneEl) this.stillPlaneEl.setAttribute('material', 'opacity', '0');
-        if (this.livingPlaneEl) this.livingPlaneEl.setAttribute('material', 'opacity', '1');
-        if (this.shimmerPlaneEl) this.shimmerPlaneEl.setAttribute('material', 'opacity', '0');
-        if (this.targetEl) this.targetEl.setAttribute('scale', '1 1 1');
-        this.fadeAnimId = null;
-      }
-    };
-
-    this.fadeAnimId = requestAnimationFrame(animateDissolve);
   }
 
-  resetSmoothTransition() {
+  // =========================================================================
+  // INSTANT VIDEO DISPLAY & HIDE (Immediate playback as soon as target detected)
+  // =========================================================================
+  showVideoImmediately() {
     if (this.fadeAnimId) {
       cancelAnimationFrame(this.fadeAnimId);
       this.fadeAnimId = null;
     }
-    // Instantly reset so next scan starts cleanly from the still photo
+    if (this.stillPlaneEl) this.stillPlaneEl.setAttribute('material', 'opacity', '0.0');
+    if (this.livingPlaneEl) this.livingPlaneEl.setAttribute('material', 'opacity', '1.0');
+    if (this.shimmerPlaneEl) this.shimmerPlaneEl.setAttribute('material', 'opacity', '0.0');
+    if (this.targetEl) this.targetEl.setAttribute('scale', '1 1 1');
+  }
+
+  hideVideoImmediately() {
+    if (this.fadeAnimId) {
+      cancelAnimationFrame(this.fadeAnimId);
+      this.fadeAnimId = null;
+    }
     if (this.stillPlaneEl) this.stillPlaneEl.setAttribute('material', 'opacity', '1.0');
     if (this.livingPlaneEl) this.livingPlaneEl.setAttribute('material', 'opacity', '0.0');
     if (this.shimmerPlaneEl) this.shimmerPlaneEl.setAttribute('material', 'opacity', '0.0');
@@ -309,13 +271,16 @@ export class MindARController {
   async playWeddingVideo() {
     if (!this.videoEl) return;
 
+    // Show video plane immediately on target detection
+    this.showVideoImmediately();
+
     // Ensure video texture is fitted to 1:1 plane
     this.fitVideoTextureToPlane();
 
     // Stop synthesized background harp music so video audio is crystal clear
     weddingAudio.stopMusic();
 
-    // Rewind video to start cleanly from beginning
+    // Ensure video starts cleanly from beginning (0.0s)
     try {
       this.videoEl.currentTime = 0;
     } catch (e) {}
@@ -338,15 +303,23 @@ export class MindARController {
       }
     }
 
-    // Launch smooth 1.2s cinematic dissolve from photo to video
-    this.startSmoothTransition();
+    // Ensure video plane stays active
+    this.showVideoImmediately();
   }
 
   pauseWeddingVideo() {
-    if (this.videoEl && !this.videoEl.paused) {
-      this.videoEl.pause();
+    if (this.videoEl) {
+      if (!this.videoEl.paused) {
+        this.videoEl.pause();
+      }
+      // Rewind to 0 immediately so next target detection starts from the beginning
+      try {
+        this.videoEl.currentTime = 0;
+      } catch (e) {}
+      this.videoEl.muted = false;
+      this.videoEl.volume = 1.0;
     }
-    this.resetSmoothTransition();
+    this.hideVideoImmediately();
   }
 
   async start() {
@@ -378,10 +351,15 @@ export class MindARController {
   }
 
   stop() {
-    if (this.videoEl && !this.videoEl.paused) {
-      this.videoEl.pause();
+    if (this.videoEl) {
+      if (!this.videoEl.paused) {
+        this.videoEl.pause();
+      }
+      try {
+        this.videoEl.currentTime = 0;
+      } catch (e) {}
     }
-    this.resetSmoothTransition();
+    this.hideVideoImmediately();
     this.livingEngine.stop();
     if (this.sceneEl && this.sceneEl.systems) {
       const mindarSystem = this.sceneEl.systems['mindar-image-system'];

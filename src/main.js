@@ -77,6 +77,7 @@ const arScene = new WeddingARScene(canvas, video, mindarContainer);
 const cardGen = new TableCardGenerator('generator-mount-point');
 const wishingWall = new WishingWall();
 const mindarCtrl = new MindARController(appState.weddingInfo.couple);
+window.mindarCtrl = mindarCtrl;
 
 // Real-time Computer Vision Callback when target image is found or lost by MindAR
 mindarCtrl.onStatusChange = (found) => {
@@ -208,17 +209,22 @@ function unlockWeddingVideoAudio() {
   if (vid) {
     vid.muted = false;
     vid.volume = 1.0;
-    const p = vid.play();
-    if (p !== undefined) {
-      p.then(() => {
-        vid.pause();
-        vid.currentTime = 0;
-        vid.muted = false;
-        vid.volume = 1.0;
-        console.log('✅ [Main] Video audio primed cleanly by user click');
-      }).catch(err => {
-        console.warn('⚠️ [Main] Video prime catch:', err);
-      });
+    // Only prime with play/pause if paused and target is not currently being viewed
+    if (vid.paused && (!window.mindarCtrl || !window.mindarCtrl.isTargetFound)) {
+      const p = vid.play();
+      if (p !== undefined) {
+        p.then(() => {
+          if (!window.mindarCtrl || !window.mindarCtrl.isTargetFound) {
+            vid.pause();
+            vid.currentTime = 0;
+          }
+          vid.muted = false;
+          vid.volume = 1.0;
+          console.log('✅ [Main] Video audio primed cleanly by user click');
+        }).catch(err => {
+          console.warn('⚠️ [Main] Video prime catch:', err);
+        });
+      }
     }
   }
   weddingAudio.init();
