@@ -2,23 +2,6 @@ import { weddingLights } from './weddingLights.js';
 import { weddingAudio } from './audio.js';
 import { LivingPhotoEngine } from './livingPhotoEngine.js';
 
-// Register custom A-Frame component to force WebGL video texture frame upload on every render tick
-if (typeof window !== 'undefined' && typeof window.AFRAME !== 'undefined' && !window.AFRAME.components['ar-video-sync']) {
-  window.AFRAME.registerComponent('ar-video-sync', {
-    init: function () {
-      this.video = document.getElementById('custom-wedding-video');
-    },
-    tick: function () {
-      if (this.video && !this.video.paused && this.video.readyState >= 2) {
-        const mesh = this.el.getObject3D('mesh');
-        if (mesh && mesh.material && mesh.material.map) {
-          mesh.material.map.needsUpdate = true;
-        }
-      }
-    }
-  });
-}
-
 /**
  * MindARController
  * Powers real computer vision Image Target WebAR tracking like Stories AR!
@@ -49,11 +32,9 @@ export class MindARController {
     this.livingEngine = new LivingPhotoEngine('living-photo-canvas');
     this.isTracking = false;
     this.isTargetFound = false;
-    this.videoTextureAnimId = null;
     this.initVideoElement();
     this.initTextureCanvases();
     this.setupListeners();
-    this.startVideoTextureLoop();
   }
 
   set coupleName(val) {
@@ -202,26 +183,9 @@ export class MindARController {
     if (!this.videoEl) return;
     this.videoEl.muted = false;
     this.videoEl.volume = 1.0;
-    if (this.isTargetFound && (this.videoEl.paused || this.videoEl.muted)) {
+    if (this.isTargetFound && this.videoEl.paused) {
       this.playWeddingVideo();
     }
-  }
-
-  // Continuous WebGL texture refresh loop ensuring video frames are pushed to GPU
-  startVideoTextureLoop() {
-    if (this.videoTextureAnimId) return;
-    const updateLoop = () => {
-      if (this.isTargetFound && this.videoEl && !this.videoEl.paused && this.videoEl.readyState >= 2) {
-        if (this.livingPlaneEl) {
-          const mesh = this.livingPlaneEl.getObject3D('mesh');
-          if (mesh && mesh.material && mesh.material.map) {
-            mesh.material.map.needsUpdate = true;
-          }
-        }
-      }
-      this.videoTextureAnimId = requestAnimationFrame(updateLoop);
-    };
-    this.videoTextureAnimId = requestAnimationFrame(updateLoop);
   }
 
   // =========================================================================
@@ -232,21 +196,9 @@ export class MindARController {
       cancelAnimationFrame(this.fadeAnimId);
       this.fadeAnimId = null;
     }
-    // Hide static photo layer and show video plane
-    if (this.stillPlaneEl) this.stillPlaneEl.setAttribute('visible', 'false');
-    if (this.shimmerPlaneEl) this.shimmerPlaneEl.setAttribute('visible', 'false');
-    if (this.livingPlaneEl) {
-      this.livingPlaneEl.setAttribute('visible', 'true');
-      const mesh = this.livingPlaneEl.getObject3D('mesh');
-      if (mesh && mesh.material) {
-        mesh.material.opacity = 1.0;
-        mesh.material.transparent = false;
-        if (mesh.material.map) {
-          mesh.material.map.needsUpdate = true;
-        }
-        mesh.material.needsUpdate = true;
-      }
-    }
+    if (this.stillPlaneEl) this.stillPlaneEl.setAttribute('material', 'opacity', '0.0');
+    if (this.livingPlaneEl) this.livingPlaneEl.setAttribute('material', 'opacity', '1.0');
+    if (this.shimmerPlaneEl) this.shimmerPlaneEl.setAttribute('material', 'opacity', '0.0');
     if (this.targetEl) this.targetEl.setAttribute('scale', '1 1 1');
   }
 
@@ -255,10 +207,9 @@ export class MindARController {
       cancelAnimationFrame(this.fadeAnimId);
       this.fadeAnimId = null;
     }
-    // Show static photo layer and hide video plane
-    if (this.stillPlaneEl) this.stillPlaneEl.setAttribute('visible', 'true');
-    if (this.livingPlaneEl) this.livingPlaneEl.setAttribute('visible', 'false');
-    if (this.shimmerPlaneEl) this.shimmerPlaneEl.setAttribute('visible', 'false');
+    if (this.stillPlaneEl) this.stillPlaneEl.setAttribute('material', 'opacity', '1.0');
+    if (this.livingPlaneEl) this.livingPlaneEl.setAttribute('material', 'opacity', '0.0');
+    if (this.shimmerPlaneEl) this.shimmerPlaneEl.setAttribute('material', 'opacity', '0.0');
     if (this.targetEl) this.targetEl.setAttribute('scale', '1 1 1');
   }
 
@@ -272,7 +223,30 @@ export class MindARController {
     const vHeight = this.videoEl.videoHeight || 720;
     const vAspect = vWidth / vHeight; // e.g. 1.7777778 for 16:9 video
 
-    // Adjust video texture coordinates so center region fills the square plane without distortion
+    // 1. Plane matches target image size (1.0 x 1.0 square) 100%
+    this.livingPlaneEl.setAttribute('width', '1.0');
+    this.livingPlaneEl.setAttribute('height', '1.0');
+
+    if (this.stillPlaneEl) {
+      this.stillPlaneEl.setAttribute('width', '1.0');
+      this.stillPlaneEl.setAttribute('height', '1.0');
+    }
+    if (this.shimmerPlaneEl) {
+      this.shimmerPlaneEl.setAttribute('width', '1.0');
+      this.shimmerPlaneEl.setAttribute('height', '1.0');
+    }
+    if (this.borderPlaneEl) {
+      this.borderPlaneEl.setAttribute('width', '1.03');
+      this.borderPlaneEl.setAttribute('height', '1.03');
+    }
+    if (this.bannerPlaneEl) {
+      this.bannerPlaneEl.setAttribute('position', '0 0.62 0.05');
+    }
+    if (this.namesPlaneEl) {
+      this.namesPlaneEl.setAttribute('position', '0 -0.62 0.05');
+    }
+
+    // 2. Adjust video texture coordinates so center region fills the square plane without distortion
     const map = mesh.material.map;
     if (map) {
       const pAspect = 1.0; // square target plane
@@ -289,7 +263,7 @@ export class MindARController {
         map.repeat.set(repeatX, repeatY);
         map.offset.set(0.0, offsetY);
       }
-      map.updateMatrix();
+      map.matrixAutoUpdate = true;
       map.needsUpdate = true;
     }
   }

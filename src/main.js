@@ -48,16 +48,11 @@ const pauseIcon = document.getElementById('pause-icon');
 const pauseText = document.getElementById('pause-text');
 const btnTapInteract = document.getElementById('btn-tap-interact');
 
-// Welcome Entry Modal & Option A Mobile 1-Tap Splash
+// Welcome Entry Modal
 const welcomeModal = document.getElementById('welcome-modal');
 const btnStartCameraExperience = document.getElementById('btn-start-camera-experience');
 const btnStart3dExperience = document.getElementById('btn-start-3d-experience');
 const btnLandingShowCard = document.getElementById('btn-landing-show-card');
-
-const arScanSplash = document.getElementById('ar-scan-splash');
-const btnSplashLaunchAr = document.getElementById('btn-splash-launch-ar');
-const splashCoupleName = document.getElementById('splash-couple-name');
-const splashVenueDate = document.getElementById('splash-venue-date');
 
 const cardGeneratorScreen = document.getElementById('card-generator-screen');
 const btnTakeSnapshot = document.getElementById('btn-take-snapshot');
@@ -118,16 +113,8 @@ function initWeddingData() {
   appState.weddingInfo.couple = couple;
 
   if (headerCoupleName) headerCoupleName.textContent = couple;
-  if (splashCoupleName) splashCoupleName.textContent = couple;
   if (badgeTableText) badgeTableText.textContent = table;
   if (inputWishTable) inputWishTable.value = table;
-
-  if (splashVenueDate) {
-    const parts = [];
-    if (appState.weddingInfo.date) parts.push(appState.weddingInfo.date);
-    if (appState.weddingInfo.venue) parts.push(appState.weddingInfo.venue);
-    if (parts.length > 0) splashVenueDate.textContent = parts.join(' • ');
-  }
 
   arScene.coupleName = couple;
   if (mindarCtrl) {
@@ -222,7 +209,8 @@ function unlockWeddingVideoAudio() {
   if (vid) {
     vid.muted = false;
     vid.volume = 1.0;
-    try {
+    // Only prime with play/pause if paused and target is not currently being viewed
+    if (vid.paused && (!window.mindarCtrl || !window.mindarCtrl.isTargetFound)) {
       const p = vid.play();
       if (p !== undefined) {
         p.then(() => {
@@ -232,53 +220,32 @@ function unlockWeddingVideoAudio() {
           }
           vid.muted = false;
           vid.volume = 1.0;
-          console.log('✅ [Main] Video audio primed cleanly & synchronously');
+          console.log('✅ [Main] Video audio primed cleanly by user click');
         }).catch(err => {
           console.warn('⚠️ [Main] Video prime catch:', err);
-          vid.muted = false;
-          vid.volume = 1.0;
         });
       }
-    } catch (err) {
-      console.warn('⚠️ [Main] Video prime sync catch:', err);
     }
   }
   weddingAudio.init();
 }
 
 // -----------------------------------------------------------------------------
-// 3. Welcome / Landing Page Actions (Option A: 1-Tap Audio Unlock & Camera Start)
+// 3. Welcome / Landing Page Actions
 // -----------------------------------------------------------------------------
-async function launchCameraWithAudioUnlock() {
-  // 1. PRIME & UNLOCK AUDIO SYNCHRONOUSLY FIRST inside direct user gesture!
+btnStartCameraExperience?.addEventListener('click', async () => {
+  // 1. PRIME SYNCHRONOUSLY FIRST inside direct user gesture!
   unlockWeddingVideoAudio();
   weddingAudio.init();
-  if (window.mindarCtrl && window.mindarCtrl.videoEl) {
-    window.mindarCtrl.videoEl.muted = false;
-    window.mindarCtrl.videoEl.volume = 1.0;
-  }
 
-  // 2. Hide both welcome modal & mobile splash
-  arScanSplash?.classList.add('hidden');
+  // 2. Then proceed with gyro permission and camera view setup
+  await arScene.gyroManager.requestPermission();
   welcomeModal?.classList.add('hidden');
-
-  // 3. Request gyroscope if available
-  try {
-    if (arScene?.gyroManager?.requestPermission) {
-      await arScene.gyroManager.requestPermission();
-    }
-  } catch (e) {}
-
-  // 4. Transition to AR Camera view
   await setView('ar-camera');
-}
-
-btnSplashLaunchAr?.addEventListener('click', launchCameraWithAudioUnlock);
-btnStartCameraExperience?.addEventListener('click', launchCameraWithAudioUnlock);
+});
 
 btnStart3dExperience?.addEventListener('click', () => {
   welcomeModal?.classList.add('hidden');
-  arScanSplash?.classList.add('hidden');
   setView('virtual-3d');
   arScene.triggerMagneticSnap();
   weddingAudio.init();
@@ -286,17 +253,12 @@ btnStart3dExperience?.addEventListener('click', () => {
 
 btnLandingShowCard?.addEventListener('click', () => {
   welcomeModal?.classList.add('hidden');
-  arScanSplash?.classList.add('hidden');
   setView('table-card');
 });
 
 btnExitAr?.addEventListener('click', () => {
   arScene.stopCamera();
-  if (appState.weddingInfo.autoScan) {
-    arScanSplash?.classList.remove('hidden');
-  } else {
-    welcomeModal?.classList.remove('hidden');
-  }
+  welcomeModal?.classList.remove('hidden');
 });
 
 // Quick lock button inside scanner overlay
@@ -359,17 +321,14 @@ btnToggleMusic?.addEventListener('click', () => {
   }
 });
 
-const primeGlobalAudio = () => {
+window.addEventListener('pointerdown', () => {
   weddingAudio.init();
   unlockWeddingVideoAudio();
-  if (window.mindarCtrl && window.mindarCtrl.videoEl) {
-    window.mindarCtrl.videoEl.muted = false;
-    window.mindarCtrl.videoEl.volume = 1.0;
-  }
-};
-['pointerdown', 'touchstart', 'click'].forEach(evt => {
-  window.addEventListener(evt, primeGlobalAudio, { passive: true });
-});
+}, { once: true });
+
+window.addEventListener('touchstart', () => {
+  unlockWeddingVideoAudio();
+}, { once: true });
 
 // -----------------------------------------------------------------------------
 // 6. Hologram Theme Chips (Gold, Cyan, Ruby)
@@ -518,14 +477,12 @@ async function initStoriesDemoQR() {
 initWeddingData();
 initStoriesDemoQR();
 
-// If user arrived by scanning the QR code, show the 1-tap mobile AR launch splash!
+// If user arrived by scanning the QR code, jump straight to camera AR scanner!
 if (appState.weddingInfo.autoScan) {
   welcomeModal?.classList.add('hidden');
-  arScanSplash?.classList.remove('hidden');
-  setView('virtual-3d');
+  setView('ar-camera');
 } else {
   // Otherwise display the Stories AR Live Demo screen (Image 2)
   welcomeModal?.classList.remove('hidden');
-  arScanSplash?.classList.add('hidden');
   setView('virtual-3d');
 }
