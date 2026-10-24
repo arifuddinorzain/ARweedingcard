@@ -82,11 +82,11 @@ const mindarCtrl = new MindARController(appState.weddingInfo.couple);
 mindarCtrl.onStatusChange = (found) => {
   if (scannerStatusText) {
     if (found) {
-      scannerStatusText.textContent = '✨ FOTO PENGANTIN DIKESAN! GAMBAR BERGERAK AKTIF ✨';
-      if (guidanceText) guidanceText.textContent = '✨ Foto pengantin dikesan! Saksikan gambar bergerak hidup tepat di atas kad anda!';
+      scannerStatusText.textContent = '✨ FOTO PENGANTIN DIKESAN! VIDEO KAHWIN BERMAIN ✨';
+      if (guidanceText) guidanceText.textContent = '🎬 Foto pengantin dikesan! Saksikan video kahwin bermain terus di atas kad anda!';
     } else {
       scannerStatusText.textContent = 'Mengesan Foto Pengantin Pada Kad...';
-      if (guidanceText) guidanceText.textContent = '📸 Halakan kamera ke arah gambar pengantin untuk saksikan gambar bergerak!';
+      if (guidanceText) guidanceText.textContent = '📸 Halakan kamera ke arah gambar pengantin untuk memainkan video kahwin!';
     }
   }
 };
@@ -94,11 +94,11 @@ mindarCtrl.onStatusChange = (found) => {
 arScene.onTargetStatusChange = (found) => {
   if (scannerStatusText) {
     if (found) {
-      scannerStatusText.textContent = '✨ FOTO PENGANTIN DIKESAN! GAMBAR BERGERAK DIAKTIFKAN ✨';
-      if (guidanceText) guidanceText.textContent = '✨ Foto dikesan! Saksikan gambar bergerak hidup dan sentuh untuk berinteraksi!';
+      scannerStatusText.textContent = '✨ FOTO PENGANTIN DIKESAN! VIDEO KAHWIN DIMAINKAN ✨';
+      if (guidanceText) guidanceText.textContent = '🎬 Foto dikesan! Video kahwin bermain di atas foto anda!';
     } else {
       scannerStatusText.textContent = 'Mengesan Foto Pengantin Pada Kad...';
-      if (guidanceText) guidanceText.textContent = '📸 Halakan kamera ke arah gambar pengantin untuk saksikan gambar bergerak!';
+      if (guidanceText) guidanceText.textContent = '📸 Halakan kamera ke arah gambar pengantin untuk memainkan video kahwin!';
     }
   }
 };
@@ -192,6 +192,13 @@ async function setView(viewName) {
 btnStartCameraExperience?.addEventListener('click', async () => {
   await arScene.gyroManager.requestPermission();
   welcomeModal?.classList.add('hidden');
+
+  // Pre-load and prime wedding video with user tap gesture
+  const video = document.getElementById('custom-wedding-video');
+  if (video) {
+    video.load();
+  }
+
   await setView('ar-camera');
   weddingAudio.init();
 });

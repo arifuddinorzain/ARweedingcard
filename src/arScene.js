@@ -451,10 +451,25 @@ export class WeddingARScene {
     this.magnetShadowMesh.position.set(0, -0.04, 0);
     this.arMagnetGroup.add(this.magnetShadowMesh);
 
-    // 2. Load Couple Photo
+    // 2. Load Couple Photo & Wedding Video Texture
     const textureLoader = new THREE.TextureLoader();
     this.photoTexture = textureLoader.load('/pengantin.jpg');
     this.photoTexture.anisotropy = 4;
+
+    this.weddingVideoEl = document.createElement('video');
+    this.weddingVideoEl.src = '/videokahwin.mp4';
+    this.weddingVideoEl.crossOrigin = 'anonymous';
+    this.weddingVideoEl.loop = true;
+    this.weddingVideoEl.muted = true;
+    this.weddingVideoEl.playsInline = true;
+    this.weddingVideoEl.setAttribute('webkit-playsinline', '');
+    this.weddingVideoEl.preload = 'auto';
+
+    this.videoTexture = new THREE.VideoTexture(this.weddingVideoEl);
+    this.videoTexture.minFilter = THREE.LinearFilter;
+    this.videoTexture.magFilter = THREE.LinearFilter;
+    this.videoTexture.colorSpace = THREE.SRGBColorSpace;
+    this.isVideoPlayingIn3D = false;
 
     // 3. Living Photo Shader:
     // - Diagonal golden sunbeam sweep across mosque & couple
@@ -767,6 +782,28 @@ export class WeddingARScene {
     this.arAnchor.add(this.particleSystem);
   }
 
+  toggle3DWeddingVideo() {
+    if (!this.weddingVideoEl) return;
+    if (this.isVideoPlayingIn3D) {
+      this.weddingVideoEl.pause();
+      if (this.magnetShaderMat) {
+        this.magnetShaderMat.uniforms.uTexture.value = this.photoTexture;
+      }
+      this.isVideoPlayingIn3D = false;
+    } else {
+      weddingAudio.stopMusic();
+      this.weddingVideoEl.muted = false;
+      this.weddingVideoEl.play().catch(() => {
+        this.weddingVideoEl.muted = true;
+        this.weddingVideoEl.play();
+      });
+      if (this.magnetShaderMat) {
+        this.magnetShaderMat.uniforms.uTexture.value = this.videoTexture;
+      }
+      this.isVideoPlayingIn3D = true;
+    }
+  }
+
   // =========================================================================
   // AR MAGNET INTERACTION & SPRING SNAP PHYSICS
   // =========================================================================
@@ -776,6 +813,9 @@ export class WeddingARScene {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate([25, 40, 25]);
     }
+
+    // Toggle 3D wedding video playback on the photo
+    this.toggle3DWeddingVideo();
 
     // Magnetic Spring Pop Animation:
     // Plaque snaps up with energetic spring bounce!
@@ -789,8 +829,7 @@ export class WeddingARScene {
       this.magnetWaveMesh.material.opacity = 1.0;
     }
 
-    // Voice greeting & confetti
-    weddingAudio.speakGreeting(this.coupleName);
+    // Confetti celebration
     confetti({
       particleCount: 65,
       spread: 75,

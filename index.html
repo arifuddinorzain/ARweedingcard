@@ -32,26 +32,26 @@
           <a-assets>
             <img id="card-photo-target" src="/pengantin.jpg">
             <canvas id="living-photo-canvas" width="800" height="600"></canvas>
-            <video id="custom-wedding-video" playsinline webkit-playsinline loop muted crossorigin="anonymous"></video>
+            <video id="custom-wedding-video" src="/videokahwin.mp4" playsinline webkit-playsinline loop preload="auto" crossorigin="anonymous"></video>
           </a-assets>
 
           <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
           <!-- Image Target 0: Couple Photo (Brings static photo alive into moving picture!) -->
           <a-entity id="mindar-target" mindar-image-target="targetIndex: 0">
-            <!-- Living Moving Photo Plane -->
+            <!-- Living Moving Photo & Video Plane -->
             <a-plane
               id="ar-living-plane"
               position="0 0 0.01"
-              height="0.75"
+              height="0.65"
               width="1.0"
-              material="src: #living-photo-canvas; shader: flat; transparent: true;"
+              material="src: #custom-wedding-video; shader: flat; transparent: false;"
             ></a-plane>
 
             <!-- Royal Gold Shimmer Border -->
             <a-plane
               position="0 0 0.005"
-              height="0.77"
+              height="0.67"
               width="1.02"
               material="color: #d4af37; shader: flat; opacity: 0.85;"
             ></a-plane>
@@ -59,7 +59,7 @@
             <!-- Floating 3D Greeting Banner -->
             <a-plane
               id="ar-floating-banner"
-              position="0 0.48 0.05"
+              position="0 0.44 0.05"
               height="0.16"
               width="0.9"
             ></a-plane>
@@ -67,7 +67,7 @@
             <!-- Floating Names Plaque -->
             <a-plane
               id="ar-floating-names"
-              position="0 -0.46 0.05"
+              position="0 -0.44 0.05"
               height="0.12"
               width="0.7"
             ></a-plane>
@@ -89,6 +89,14 @@
           <div class="corner-bracket bottom-left"></div>
           <div class="corner-bracket bottom-right"></div>
           <div class="scanner-laser-line"></div>
+        </div>
+
+        <!-- Video Audio State Floating Pill -->
+        <div class="video-audio-badge hidden" id="video-audio-badge">
+          <button id="btn-video-audio-toggle" class="video-sound-pill" title="Pasang / Matikan Suara Video">
+            <span id="video-sound-icon">🔊</span>
+            <span id="video-sound-text">Video Pengantin Aktif</span>
+          </button>
         </div>
 
         <div class="scanner-status-pill hidden" id="scanner-status-pill">
