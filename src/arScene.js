@@ -168,7 +168,7 @@ export class WeddingARScene {
     this.lastPointer = { x: 0, y: 0 };
     this.pointerNormalized = new THREE.Vector2(0, 0);
 
-    this.coupleName = 'Arif & Haziqah';
+    this.coupleName = 'Arif & Fatikhah';
     this.weddingDate = '24 Disember 2026';
 
     this.initScene();
@@ -663,7 +663,7 @@ export class WeddingARScene {
     this.topBanner.rotation.x = -Math.PI / 6;
     this.arAnchor.add(this.topBanner);
 
-    // 2. Bottom Floating Name Plaque: "Arif & Haziqah"
+    // 2. Bottom Floating Name Plaque: "Arif & Fatikhah"
     const btmCanvas = document.createElement('canvas');
     btmCanvas.width = 700;
     btmCanvas.height = 180;
@@ -1053,7 +1053,7 @@ export class WeddingARScene {
     this.setCameraARMode(false);
   }
 
-  captureSnapshot(coupleName = "Arif & Haziqah", tableInfo = "Meja 07 • Kasih Abadi") {
+  captureSnapshot(coupleName = "Arif & Fatikhah", tableInfo = "Meja 07 • Kasih Abadi") {
     const snapshotCanvas = document.createElement('canvas');
     const width = this.canvas.width;
     const height = this.canvas.height;

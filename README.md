@@ -20,8 +20,8 @@
 3. **🕊️ Ucapan 3D & Ucapan Suara (3D Floating Greetings & Voice Blessing)**
    - Kaligrafi terapung: *"بَارَكَ اللَّهُ لَكُمَا وَبَارَكَ عَلَيْكُمَا"*
    - Sepanduk 3D melengkung bersinar: *"✨ SELAMAT PENGANTIN BAHARU ✨"*
-   - Nama pasangan: *"Arif & Haziqah — 24 Disember 2026"*
-   - Ucapan suara automatik / butang suara pengantin: *"Selamat Pengantin Baharu kepada Arif & Haziqah. Terima kasih atas doa dan kehadiran anda!"*
+   - Nama pasangan: *"Arif & Fatikhah — 24 Disember 2026"*
+   - Ucapan suara automatik / butang suara pengantin: *"Selamat Pengantin Baharu kepada Arif & Fatikhah. Terima kasih atas doa dan kehadiran anda!"*
 
 4. **🥂 Mod Simulasi Kad 3D (Virtual 3D Card Simulation)**
    - Meja jamuan diraja 3D dengan kad jemputan terletak di atas meja bersama foto pengantin dan kod QR.
@@ -41,7 +41,7 @@
    - 🌹 **Delima Songket (Ruby Burgundy)**: Sesuai dengan warna busana songket pengantin.
 
 7. **📸 Tangkap Gambar Kenangan AR (AR Polaroid Photo Snapshot)**
-   - Menggabungkan suapan kamera langsung + Hologram 3D + bingkai emas eksklusif *"Walimatulurus Arif & Haziqah"*.
+   - Menggabungkan suapan kamera langsung + Hologram 3D + bingkai emas eksklusif *"Walimatulurus Arif & Fatikhah"*.
    - Muat turun foto terus ke galeri telefon atau kongsi ke WhatsApp / Instagram Story.
 
 8. **💌 Buku Tetamu & Ucapan Digital (Wishing Wall)**

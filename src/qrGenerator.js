@@ -4,7 +4,7 @@ export class TableCardGenerator {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
     this.currentData = {
-      coupleName: 'Arif & Haziqah',
+      coupleName: 'Arif & Fatikhah',
       tableNumber: 'Meja 07',
       tableTheme: 'Kasih Abadi',
       weddingDate: '24 Disember 2026',
@@ -231,7 +231,7 @@ export class TableCardGenerator {
             
             <div class="form-group">
               <label>Nama Pasangan Pengantin</label>
-              <input type="text" id="cfg-couple" value="${this.currentData.coupleName}" placeholder="contoh: Arif & Haziqah" />
+              <input type="text" id="cfg-couple" value="${this.currentData.coupleName}" placeholder="contoh: Arif & Fatikhah" />
             </div>
 
             <div class="form-row">
@@ -295,7 +295,7 @@ export class TableCardGenerator {
                 <!-- Couple Photo Display (AR Marker) -->
                 <div class="card-photo-container">
                   <div class="photo-frame-wrapper">
-                    <img src="${this.currentData.photoUrl}" alt="Pengantin Arif & Haziqah" class="card-couple-img" id="preview-couple-img" />
+                    <img src="${this.currentData.photoUrl}" alt="Pengantin Arif & Fatikhah" class="card-couple-img" id="preview-couple-img" />
                     <div class="marker-target-badge">
                       <span class="pulse-dot"></span>
                       <span>🧲 SASARAN KAMERA AR MAGNET</span>
@@ -344,7 +344,7 @@ export class TableCardGenerator {
     const copyBtn = document.getElementById('btn-copy-url');
 
     const updatePreview = async () => {
-      this.currentData.coupleName = coupleInput.value || 'Arif & Haziqah';
+      this.currentData.coupleName = coupleInput.value || 'Arif & Fatikhah';
       this.currentData.tableNumber = tableInput.value || 'Meja 07';
       this.currentData.tableTheme = themeInput.value || 'Kasih Abadi';
       this.currentData.weddingDate = dateInput.value || '24 Disember 2026';
@@ -412,7 +412,7 @@ export class TableCardGenerator {
   static parseUrlParams() {
     const params = new URLSearchParams(window.location.search);
     return {
-      couple: params.get('couple') || 'Arif & Haziqah',
+      couple: params.get('couple') || 'Arif & Fatikhah',
       table: params.get('table') || 'Meja 07',
       theme: params.get('theme') || 'Kasih Abadi',
       date: params.get('date') || '24 Disember 2026',

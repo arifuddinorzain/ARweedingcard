@@ -261,7 +261,7 @@ export class LivingPhotoEngine {
   }
 
   // Generate Floating Names Plaque Texture
-  static createNamesCanvas(names = 'Arif & Haziqah', info = 'Walimatulurus • Kasih Abadi') {
+  static createNamesCanvas(names = 'Arif & Fatikhah', info = 'Walimatulurus • Kasih Abadi') {
     const c = document.createElement('canvas');
     c.width = 750;
     c.height = 160;

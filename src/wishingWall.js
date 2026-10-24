@@ -22,7 +22,7 @@ export class WishingWall {
         id: 1,
         name: 'Datin Seri Zaleha & Keluarga',
         table: 'Meja 01',
-        message: 'Barakallahu lakuma wa baraka alaikuma wa jama’a bainakuma fi khair. Tahniah Arif & Haziqah! Semoga berkekalan ke anak cucu.',
+        message: 'Barakallahu lakuma wa baraka alaikuma wa jama’a bainakuma fi khair. Tahniah Arif & Fatikhah! Semoga berkekalan ke anak cucu.',
         time: 'Tadi'
       },
       {

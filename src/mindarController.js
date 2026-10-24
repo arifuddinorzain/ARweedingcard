@@ -8,7 +8,7 @@ import { LivingPhotoEngine } from './livingPhotoEngine.js';
  * Tracks target photo (/card.mind) and brings the image to life as moving video.
  */
 export class MindARController {
-  constructor(coupleName = 'Arif & Haziqah') {
+  constructor(coupleName = 'Arif & Fatikhah') {
     this.coupleName = coupleName;
     this.sceneContainer = document.getElementById('mindar-scene-container');
     this.sceneEl = document.getElementById('mindar-scene');

@@ -207,7 +207,7 @@ class WeddingAudioManager {
   }
 
   // Voice Greeting: "Selamat Pengantin Baharu!"
-  speakGreeting(coupleName = "Arif & Haziqah") {
+  speakGreeting(coupleName = "Arif & Fatikhah") {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
     try {
       window.speechSynthesis.cancel();
