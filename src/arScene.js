@@ -168,10 +168,24 @@ export class WeddingARScene {
     this.lastPointer = { x: 0, y: 0 };
     this.pointerNormalized = new THREE.Vector2(0, 0);
 
-    this.coupleName = 'Arif & Fatikhah';
+    this._coupleName = 'Arif & Fatikhah';
     this.weddingDate = '24 Disember 2026';
 
     this.initScene();
+  }
+
+  set coupleName(val) {
+    let clean = val || 'Arif & Fatikhah';
+    try {
+      clean = decodeURIComponent(clean);
+      if (clean.includes('%')) clean = decodeURIComponent(clean);
+    } catch (e) {}
+    clean = clean.replace(/%26/g, '&').replace(/%20/g, ' ').replace(/\+/g, ' ').replace(/haziqah/gi, 'Fatikhah');
+    this._coupleName = clean.trim() || 'Arif & Fatikhah';
+  }
+
+  get coupleName() {
+    return this._coupleName || 'Arif & Fatikhah';
   }
 
   initScene() {

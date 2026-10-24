@@ -408,11 +408,30 @@ export class TableCardGenerator {
     });
   }
 
+  static sanitizeCoupleName(name) {
+    if (!name) return 'Arif & Fatikhah';
+    let cleaned = name;
+    try {
+      cleaned = decodeURIComponent(cleaned);
+      if (cleaned.includes('%')) {
+        cleaned = decodeURIComponent(cleaned);
+      }
+    } catch (e) {}
+    cleaned = cleaned.replace(/%26/g, '&').replace(/%20/g, ' ').replace(/\+/g, ' ');
+    cleaned = cleaned.replace(/haziqah/gi, 'Fatikhah');
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    if (!cleaned || cleaned.toLowerCase() === 'arif &' || cleaned.toLowerCase() === 'arif') {
+      return 'Arif & Fatikhah';
+    }
+    return cleaned;
+  }
+
   // Parse current URL query params (if opened via scanned QR code)
   static parseUrlParams() {
     const params = new URLSearchParams(window.location.search);
+    const rawCouple = params.get('couple');
     return {
-      couple: params.get('couple') || 'Arif & Fatikhah',
+      couple: TableCardGenerator.sanitizeCoupleName(rawCouple),
       table: params.get('table') || 'Meja 07',
       theme: params.get('theme') || 'Kasih Abadi',
       date: params.get('date') || '24 Disember 2026',

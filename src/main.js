@@ -107,12 +107,28 @@ arScene.onTargetStatusChange = (found) => {
 // 1. Initialize Wedding Info from URL / Defaults
 // -----------------------------------------------------------------------------
 function initWeddingData() {
-  const { couple, table } = appState.weddingInfo;
+  let { couple, table } = appState.weddingInfo;
+  couple = TableCardGenerator.sanitizeCoupleName(couple);
+  appState.weddingInfo.couple = couple;
+
   if (headerCoupleName) headerCoupleName.textContent = couple;
   if (badgeTableText) badgeTableText.textContent = table;
   if (inputWishTable) inputWishTable.value = table;
 
   arScene.coupleName = couple;
+  if (mindarCtrl) {
+    mindarCtrl.coupleName = couple;
+    mindarCtrl.initTextureCanvases();
+  }
+
+  // Clean URL in browser address bar if it still contains old encoded string or haziqah
+  if (window.location.search && (window.location.search.toLowerCase().includes('haziqah') || window.location.search.includes('%25') || window.location.search.includes('%26'))) {
+    try {
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.set('couple', couple);
+      window.history.replaceState({}, '', cleanUrl.toString());
+    } catch (e) {}
+  }
 }
 
 // -----------------------------------------------------------------------------

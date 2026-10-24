@@ -9,7 +9,14 @@ import { LivingPhotoEngine } from './livingPhotoEngine.js';
  */
 export class MindARController {
   constructor(coupleName = 'Arif & Fatikhah') {
-    this.coupleName = coupleName;
+    let cleanName = coupleName || 'Arif & Fatikhah';
+    try {
+      cleanName = decodeURIComponent(cleanName);
+      if (cleanName.includes('%')) cleanName = decodeURIComponent(cleanName);
+    } catch (e) {}
+    cleanName = cleanName.replace(/%26/g, '&').replace(/%20/g, ' ').replace(/\+/g, ' ');
+    cleanName = cleanName.replace(/haziqah/gi, 'Fatikhah');
+    this._coupleName = cleanName.trim() || 'Arif & Fatikhah';
     this.sceneContainer = document.getElementById('mindar-scene-container');
     this.sceneEl = document.getElementById('mindar-scene');
     this.targetEl = document.getElementById('mindar-target');
@@ -30,6 +37,20 @@ export class MindARController {
     this.initVideoElement();
     this.initTextureCanvases();
     this.setupListeners();
+  }
+
+  set coupleName(val) {
+    let clean = val || 'Arif & Fatikhah';
+    try {
+      clean = decodeURIComponent(clean);
+      if (clean.includes('%')) clean = decodeURIComponent(clean);
+    } catch (e) {}
+    clean = clean.replace(/%26/g, '&').replace(/%20/g, ' ').replace(/\+/g, ' ').replace(/haziqah/gi, 'Fatikhah');
+    this._coupleName = clean.trim() || 'Arif & Fatikhah';
+  }
+
+  get coupleName() {
+    return this._coupleName || 'Arif & Fatikhah';
   }
 
   initVideoElement() {

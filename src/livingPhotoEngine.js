@@ -262,6 +262,15 @@ export class LivingPhotoEngine {
 
   // Generate Floating Names Plaque Texture
   static createNamesCanvas(names = 'Arif & Fatikhah', info = 'Walimatulurus • Kasih Abadi') {
+    let cleanNames = names || 'Arif & Fatikhah';
+    try {
+      cleanNames = decodeURIComponent(cleanNames);
+      if (cleanNames.includes('%')) cleanNames = decodeURIComponent(cleanNames);
+    } catch (e) {}
+    cleanNames = cleanNames.replace(/%26/g, '&').replace(/%20/g, ' ').replace(/\+/g, ' ');
+    cleanNames = cleanNames.replace(/haziqah/gi, 'Fatikhah');
+    cleanNames = cleanNames.trim() || 'Arif & Fatikhah';
+
     const c = document.createElement('canvas');
     c.width = 750;
     c.height = 160;
