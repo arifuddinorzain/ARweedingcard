@@ -122,6 +122,19 @@ body.ar-camera-active #ar-guidance {
   display: none !important;
 }
 
+/* Ensure mobile browser decodes video frames continuously into WebGL */
+#custom-wedding-video {
+  display: block !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0.01 !important;
+  pointer-events: none !important;
+  z-index: -999 !important;
+}
+
 #ar-webgl-canvas {
   position: fixed;
   top: 0;

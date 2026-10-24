@@ -45,25 +45,29 @@
               position="0 0 0.008"
               height="1.0"
               width="1.0"
-              material="src: #card-photo-target; shader: flat; transparent: true; opacity: 1.0;"
+              material="src: #card-photo-target; shader: flat; transparent: false; opacity: 1.0;"
+              visible="true"
             ></a-plane>
 
             <!-- 2. Video Layer (Fits the exact size of the image target) -->
             <a-plane
               id="ar-living-plane"
-              position="0 0 0.010"
+              position="0 0 0.012"
               height="1.0"
               width="1.0"
-              material="src: #custom-wedding-video; shader: flat; transparent: true; opacity: 0.0;"
+              material="src: #custom-wedding-video; shader: flat; transparent: false; opacity: 1.0;"
+              visible="false"
+              ar-video-sync
             ></a-plane>
 
             <!-- 3. Magical Golden Shimmer Transition Layer -->
             <a-plane
               id="ar-shimmer-plane"
-              position="0 0 0.012"
+              position="0 0 0.014"
               height="1.0"
               width="1.0"
               material="color: #ffd700; shader: flat; transparent: true; opacity: 0.0;"
+              visible="false"
             ></a-plane>
 
             <!-- 4. Royal Gold Shimmer Border (Frames exact photo size) -->
