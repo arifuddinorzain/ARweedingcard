@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { weddingAudio } from './audio.js';
-import confetti from 'canvas-confetti';
+import { weddingLights } from './weddingLights.js';
 
 // Real-world Device Orientation / Gyroscope Manager for Mobile WebAR
 export class DeviceOrientationManager {
@@ -873,12 +873,10 @@ export class WeddingARScene {
       this.magnetWaveMesh.material.opacity = 1.0;
     }
 
-    // Confetti celebration
-    confetti({
-      particleCount: 65,
-      spread: 75,
-      origin: { y: 0.65 },
-      colors: ['#d4af37', '#f3e5ab', '#b71c1c', '#ffffff', '#ffd700']
+    // Romantic Wedding Lights burst
+    weddingLights.burst({
+      origin: { x: 0.5, y: 0.55 },
+      count: 65
     });
   }
 

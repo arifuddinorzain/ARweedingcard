@@ -1,4 +1,4 @@
-import confetti from 'canvas-confetti';
+import { weddingLights } from './weddingLights.js';
 import { weddingAudio } from './audio.js';
 
 export class WishingWall {
@@ -60,36 +60,28 @@ export class WishingWall {
 
     // Trigger celebration effects
     weddingAudio.playWishSent();
-    this.triggerConfetti();
+    this.triggerWeddingLights();
 
     return newWish;
   }
 
-  triggerConfetti() {
-    // Elegant gold and rose petal confetti
-    confetti({
-      particleCount: 80,
-      spread: 70,
-      origin: { y: 0.7 },
-      colors: ['#d4af37', '#f3e5ab', '#ff6b8b', '#ffffff', '#e84a5f']
+  triggerWeddingLights() {
+    // Romantic warm fairy lights and diamond sparkles for guest blessings
+    weddingLights.burst({
+      origin: { x: 0.5, y: 0.65 },
+      count: 70
     });
 
     setTimeout(() => {
-      confetti({
-        particleCount: 50,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-        colors: ['#d4af37', '#f3e5ab', '#ff6b8b']
+      weddingLights.burst({
+        origin: { x: 0.3, y: 0.55 },
+        count: 40
       });
-      confetti({
-        particleCount: 50,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-        colors: ['#d4af37', '#f3e5ab', '#ff6b8b']
+      weddingLights.burst({
+        origin: { x: 0.7, y: 0.55 },
+        count: 40
       });
-    }, 250);
+    }, 300);
   }
 
   renderWishesList() {

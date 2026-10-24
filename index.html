@@ -100,6 +100,9 @@
       <!-- Fallback Three.js 3D WebGL Canvas for 3D card preview -->
       <canvas id="ar-webgl-canvas"></canvas>
 
+      <!-- Romantic Wedding Lights Particle Overlay -->
+      <canvas id="wedding-lights-canvas" class="wedding-lights-overlay"></canvas>
+
       <!-- Camera AR Card Scanner Viewfinder HUD (Clean Stories AR Style) -->
       <div class="ar-scanner-overlay hidden" id="ar-scanner-overlay">
         <div class="scanner-reticle-box">
@@ -110,17 +113,6 @@
           <div class="scanner-laser-line"></div>
         </div>
 
-        <!-- Video Audio & Aspect Fit Controls Floating Pill -->
-        <div class="video-audio-badge hidden" id="video-audio-badge">
-          <button id="btn-video-audio-toggle" class="video-sound-pill" title="Pasang / Matikan Suara Video">
-            <span id="video-sound-icon">🔊</span>
-            <span id="video-sound-text">Suara Video</span>
-          </button>
-          <button id="btn-video-fit-toggle" class="video-sound-pill video-fit-pill" title="Tukar Saiz: Padan Foto / Penuh Video">
-            <span id="video-fit-icon">📐</span>
-            <span id="video-fit-text">Padan Saiz Foto (1:1)</span>
-          </button>
-        </div>
 
         <div class="scanner-status-pill hidden" id="scanner-status-pill">
           <span class="scanner-dot"></span>

@@ -142,6 +142,17 @@ body.ar-camera-active #ar-guidance {
   cursor: grabbing;
 }
 
+/* Romantic Wedding Lights Particle Canvas */
+.wedding-lights-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 18;
+  pointer-events: none;
+}
+
 /* --------------------------------------------------------------------------
    AR Camera Scanner Viewfinder & Target Reticle HUD
    -------------------------------------------------------------------------- */
@@ -329,75 +340,6 @@ body.ar-camera-active #ar-guidance {
   filter: brightness(1.15);
 }
 
-/* --------------------------------------------------------------------------
-   Floating Wedding Video Audio & Aspect Ratio Control Pill
-   -------------------------------------------------------------------------- */
-.video-audio-badge {
-  position: absolute;
-  bottom: 110px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 15;
-  pointer-events: auto;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  max-width: 90vw;
-}
-
-.video-audio-badge.hidden {
-  display: none !important;
-}
-
-.video-sound-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(10, 25, 20, 0.92);
-  border: 1.5px solid var(--color-gold-primary);
-  border-radius: var(--radius-pill);
-  padding: 9px 20px;
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: #ffffff;
-  cursor: pointer;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.65), 0 0 16px var(--color-gold-glow);
-  backdrop-filter: var(--glass-blur);
-  transition: transform 0.2s ease, background 0.2s ease, filter 0.2s ease;
-  animation: pulseAudioBadge 2.2s infinite alternate ease-in-out;
-}
-
-.video-sound-pill:active {
-  transform: scale(0.94);
-}
-
-.video-fit-pill {
-  animation: none !important;
-  background: rgba(13, 30, 23, 0.9);
-  border-color: rgba(212, 175, 55, 0.6);
-  color: var(--color-gold-light);
-}
-
-.video-fit-pill:hover {
-  background: rgba(212, 175, 55, 0.25);
-  border-color: var(--color-gold-primary);
-}
-
-@keyframes pulseAudioBadge {
-  0% {
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 10px rgba(212, 175, 55, 0.3);
-    border-color: rgba(212, 175, 55, 0.8);
-  }
-  100% {
-    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.75), 0 0 22px rgba(212, 175, 55, 0.7);
-    border-color: #ffd700;
-  }
-}
 
 /* --------------------------------------------------------------------------
    Top Royal Navigation Bar

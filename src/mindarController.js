@@ -1,4 +1,4 @@
-import confetti from 'canvas-confetti';
+import { weddingLights } from './weddingLights.js';
 import { weddingAudio } from './audio.js';
 import { LivingPhotoEngine } from './livingPhotoEngine.js';
 
@@ -17,26 +17,10 @@ export class MindARController {
     this.bannerPlaneEl = document.getElementById('ar-floating-banner');
     this.namesPlaneEl = document.getElementById('ar-floating-names');
     this.videoEl = document.getElementById('custom-wedding-video');
-    
-    // Video audio control elements
-    this.audioBadgeEl = document.getElementById('video-audio-badge');
-    this.soundToggleBtn = document.getElementById('btn-video-audio-toggle');
-    this.soundIconEl = document.getElementById('video-sound-icon');
-    this.soundTextEl = document.getElementById('video-sound-text');
-
-    // Video aspect fit toggle elements
-    this.fitToggleBtn = document.getElementById('btn-video-fit-toggle');
-    this.fitIconEl = document.getElementById('video-fit-icon');
-    this.fitTextEl = document.getElementById('video-fit-text');
-
     this.stillPlaneEl = document.getElementById('ar-still-photo-plane');
     this.shimmerPlaneEl = document.getElementById('ar-shimmer-plane');
     this.borderPlaneEl = document.getElementById('ar-gold-border');
     this.fadeAnimId = null;
-
-    // Fit mode: 'cover' (matches image target size 100%) or 'widescreen' (original 16:9 ratio)
-    this.fitMode = 'cover';
-    this.targetAspect = 1.0; // 1024x1024 pengantin.jpg
 
     this.livingEngine = new LivingPhotoEngine('living-photo-canvas');
     this.isTracking = false;
@@ -120,12 +104,10 @@ export class MindARController {
 
       weddingAudio.playMagneticSnap();
 
-      // Royal Gold & Celebration Confetti
-      confetti({
-        particleCount: 85,
-        spread: 90,
-        origin: { y: 0.6 },
-        colors: ['#ff8a00', '#d4af37', '#ffffff', '#e11d48']
+      // Romantic Wedding Lights & Starlight Aura
+      weddingLights.burst({
+        origin: { x: 0.5, y: 0.5 },
+        count: 75
       });
 
       if (this.onStatusChange) {
@@ -145,25 +127,15 @@ export class MindARController {
       }
     });
 
-    // Sound toggle button click
-    this.soundToggleBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggleVideoAudio();
+    // Auto-unmute sound immediately on user interaction
+    ['click', 'touchstart', 'touchend', 'pointerdown'].forEach(evt => {
+      window.addEventListener(evt, () => {
+        if (this.videoEl) {
+          this.videoEl.muted = false;
+          this.videoEl.volume = 1.0;
+        }
+      }, { passive: true });
     });
-
-    // Video fit mode toggle button click (Fit to Photo Frame vs Full 16:9)
-    this.fitToggleBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggleVideoFitMode();
-    });
-
-    // Window tap/click unmutes video if browser initially started it muted
-    window.addEventListener('click', () => {
-      if (this.videoEl && !this.videoEl.paused && this.videoEl.muted) {
-        this.videoEl.muted = false;
-        this.updateAudioBadgeState(true);
-      }
-    }, { passive: true });
   }
 
   // =========================================================================
@@ -179,9 +151,10 @@ export class MindARController {
     const duration = 1400; // 1.4 seconds smooth cinematic dissolve
     const startTime = performance.now();
 
-    // Start video audio at 0 for smooth volume fade-in
+    // Ensure video audio is ON and full volume
     if (this.videoEl) {
-      this.videoEl.volume = 0;
+      this.videoEl.muted = false;
+      this.videoEl.volume = 1.0;
     }
 
     const animateDissolve = (now) => {
@@ -203,9 +176,10 @@ export class MindARController {
         this.stillPlaneEl.setAttribute('material', 'opacity', (1.0 - ease).toFixed(3));
       }
 
-      // 3. Audio volume smooth fade-in (0 -> 1)
-      if (this.videoEl && !this.videoEl.muted) {
-        this.videoEl.volume = Math.min(ease, 1.0);
+      // 3. Audio volume stays active and full
+      if (this.videoEl) {
+        this.videoEl.muted = false;
+        this.videoEl.volume = 1.0;
       }
 
       // 4. Golden Shimmer Light Glow: peaks at ~35% of transition, then gently fades
@@ -229,7 +203,10 @@ export class MindARController {
         if (this.livingPlaneEl) this.livingPlaneEl.setAttribute('material', 'opacity', '1');
         if (this.shimmerPlaneEl) this.shimmerPlaneEl.setAttribute('material', 'opacity', '0');
         if (this.targetEl) this.targetEl.setAttribute('scale', '1 1 1');
-        if (this.videoEl) this.videoEl.volume = 1.0;
+        if (this.videoEl) {
+          this.videoEl.muted = false;
+          this.videoEl.volume = 1.0;
+        }
         this.fadeAnimId = null;
       }
     };
@@ -247,7 +224,6 @@ export class MindARController {
     if (this.livingPlaneEl) this.livingPlaneEl.setAttribute('material', 'opacity', '0.0');
     if (this.shimmerPlaneEl) this.shimmerPlaneEl.setAttribute('material', 'opacity', '0.0');
     if (this.targetEl) this.targetEl.setAttribute('scale', '1 1 1');
-    if (this.videoEl) this.videoEl.volume = 0.0;
   }
 
   fitVideoTextureToPlane() {
@@ -260,99 +236,55 @@ export class MindARController {
     const vHeight = this.videoEl.videoHeight || 720;
     const vAspect = vWidth / vHeight; // e.g. 1.7777778 for 16:9 video
 
-    if (this.fitMode === 'cover') {
-      // 1. Plane matches target image size (1.0 x 1.0 square) 100%
-      this.livingPlaneEl.setAttribute('width', '1.0');
-      this.livingPlaneEl.setAttribute('height', '1.0');
+    // 1. Plane matches target image size (1.0 x 1.0 square) 100%
+    this.livingPlaneEl.setAttribute('width', '1.0');
+    this.livingPlaneEl.setAttribute('height', '1.0');
 
-      if (this.stillPlaneEl) {
-        this.stillPlaneEl.setAttribute('width', '1.0');
-        this.stillPlaneEl.setAttribute('height', '1.0');
-      }
-      if (this.shimmerPlaneEl) {
-        this.shimmerPlaneEl.setAttribute('width', '1.0');
-        this.shimmerPlaneEl.setAttribute('height', '1.0');
-      }
-      if (this.borderPlaneEl) {
-        this.borderPlaneEl.setAttribute('width', '1.03');
-        this.borderPlaneEl.setAttribute('height', '1.03');
-      }
-      if (this.bannerPlaneEl) {
-        this.bannerPlaneEl.setAttribute('position', '0 0.62 0.05');
-      }
-      if (this.namesPlaneEl) {
-        this.namesPlaneEl.setAttribute('position', '0 -0.62 0.05');
-      }
-
-      // 2. Adjust video texture coordinates so center region fills the square plane without distortion
-      const map = mesh.material.map;
-      if (map) {
-        const pAspect = 1.0; // square target plane
-        if (vAspect > pAspect) {
-          const repeatX = pAspect / vAspect; // 720 / 1280 = 0.5625
-          const repeatY = 1.0;
-          const offsetX = (1.0 - repeatX) / 2; // 0.21875
-          map.repeat.set(repeatX, repeatY);
-          map.offset.set(offsetX, 0.0);
-        } else {
-          const repeatX = 1.0;
-          const repeatY = vAspect / pAspect;
-          const offsetY = (1.0 - repeatY) / 2;
-          map.repeat.set(repeatX, repeatY);
-          map.offset.set(0.0, offsetY);
-        }
-        map.matrixAutoUpdate = true;
-        map.needsUpdate = true;
-      }
-    } else {
-      // Widescreen 16:9 mode (full original video frame shown)
-      const planeH = (1.0 / vAspect).toFixed(3); // e.g. 0.563
-      this.livingPlaneEl.setAttribute('width', '1.0');
-      this.livingPlaneEl.setAttribute('height', planeH);
-
-      if (this.borderPlaneEl) {
-        this.borderPlaneEl.setAttribute('width', '1.03');
-        this.borderPlaneEl.setAttribute('height', (parseFloat(planeH) + 0.03).toFixed(3));
-      }
-      if (this.bannerPlaneEl) {
-        this.bannerPlaneEl.setAttribute('position', `0 ${(parseFloat(planeH) / 2 + 0.12).toFixed(3)} 0.05`);
-      }
-      if (this.namesPlaneEl) {
-        this.namesPlaneEl.setAttribute('position', `0 ${(-parseFloat(planeH) / 2 - 0.12).toFixed(3)} 0.05`);
-      }
-
-      const map = mesh.material.map;
-      if (map) {
-        map.repeat.set(1.0, 1.0);
-        map.offset.set(0.0, 0.0);
-        map.matrixAutoUpdate = true;
-        map.needsUpdate = true;
-      }
+    if (this.stillPlaneEl) {
+      this.stillPlaneEl.setAttribute('width', '1.0');
+      this.stillPlaneEl.setAttribute('height', '1.0');
     }
-  }
+    if (this.shimmerPlaneEl) {
+      this.shimmerPlaneEl.setAttribute('width', '1.0');
+      this.shimmerPlaneEl.setAttribute('height', '1.0');
+    }
+    if (this.borderPlaneEl) {
+      this.borderPlaneEl.setAttribute('width', '1.03');
+      this.borderPlaneEl.setAttribute('height', '1.03');
+    }
+    if (this.bannerPlaneEl) {
+      this.bannerPlaneEl.setAttribute('position', '0 0.62 0.05');
+    }
+    if (this.namesPlaneEl) {
+      this.namesPlaneEl.setAttribute('position', '0 -0.62 0.05');
+    }
 
-  toggleVideoFitMode() {
-    this.fitMode = this.fitMode === 'cover' ? 'widescreen' : 'cover';
-    this.fitVideoTextureToPlane();
-    this.updateFitBadgeState();
-  }
-
-  updateFitBadgeState() {
-    if (this.fitIconEl && this.fitTextEl) {
-      if (this.fitMode === 'cover') {
-        this.fitIconEl.textContent = '📐';
-        this.fitTextEl.textContent = 'Padan Saiz Foto (1:1)';
+    // 2. Adjust video texture coordinates so center region fills the square plane without distortion
+    const map = mesh.material.map;
+    if (map) {
+      const pAspect = 1.0; // square target plane
+      if (vAspect > pAspect) {
+        const repeatX = pAspect / vAspect; // 720 / 1280 = 0.5625
+        const repeatY = 1.0;
+        const offsetX = (1.0 - repeatX) / 2; // 0.21875
+        map.repeat.set(repeatX, repeatY);
+        map.offset.set(offsetX, 0.0);
       } else {
-        this.fitIconEl.textContent = '📺';
-        this.fitTextEl.textContent = 'Nisbah Penuh (16:9)';
+        const repeatX = 1.0;
+        const repeatY = vAspect / pAspect;
+        const offsetY = (1.0 - repeatY) / 2;
+        map.repeat.set(repeatX, repeatY);
+        map.offset.set(0.0, offsetY);
       }
+      map.matrixAutoUpdate = true;
+      map.needsUpdate = true;
     }
   }
 
   async playWeddingVideo() {
     if (!this.videoEl) return;
 
-    // Ensure video texture is fitted to plane
+    // Ensure video texture is fitted to 1:1 plane
     this.fitVideoTextureToPlane();
 
     // Reset video to start cleanly
@@ -361,17 +293,21 @@ export class MindARController {
     // Stop synthesized background music so wedding video audio can play clearly
     weddingAudio.stopMusic();
 
+    // AUTO ON AUDIO: Always unmuted with full volume
+    this.videoEl.muted = false;
+    this.videoEl.volume = 1.0;
+
     try {
-      // First attempt to play with audio (succeeds if user gesture primed it)
-      this.videoEl.muted = false;
       await this.videoEl.play();
-      this.updateAudioBadgeState(true);
+      this.videoEl.muted = false;
+      this.videoEl.volume = 1.0;
     } catch (err) {
-      console.warn('[WeddingVideo] Autoplay with sound blocked by mobile browser. Playing muted:', err);
+      console.warn('[WeddingVideo] Autoplay blocked, playing muted fallback then unmuting:', err);
       try {
         this.videoEl.muted = true;
         await this.videoEl.play();
-        this.updateAudioBadgeState(false);
+        this.videoEl.muted = false;
+        this.videoEl.volume = 1.0;
       } catch (e2) {
         console.error('[WeddingVideo] Failed to play video:', e2);
       }
@@ -379,10 +315,6 @@ export class MindARController {
 
     // Launch smooth 1.4s cinematic dissolve from photo to video
     this.startSmoothTransition();
-
-    if (this.audioBadgeEl) {
-      this.audioBadgeEl.classList.remove('hidden');
-    }
   }
 
   pauseWeddingVideo() {
@@ -390,30 +322,6 @@ export class MindARController {
       this.videoEl.pause();
     }
     this.resetSmoothTransition();
-    if (this.audioBadgeEl) {
-      this.audioBadgeEl.classList.add('hidden');
-    }
-  }
-
-  toggleVideoAudio() {
-    if (!this.videoEl) return;
-    this.videoEl.muted = !this.videoEl.muted;
-    if (!this.videoEl.muted) {
-      this.videoEl.volume = 1.0;
-    }
-    this.updateAudioBadgeState(!this.videoEl.muted);
-  }
-
-  updateAudioBadgeState(isAudioActive) {
-    if (this.soundIconEl && this.soundTextEl) {
-      if (isAudioActive) {
-        this.soundIconEl.textContent = '🔊';
-        this.soundTextEl.textContent = 'Suara Video Aktif';
-      } else {
-        this.soundIconEl.textContent = '🔇';
-        this.soundTextEl.textContent = 'Ketik Untuk Dengar Suara Video';
-      }
-    }
   }
 
   async start() {

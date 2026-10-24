@@ -187,17 +187,30 @@ async function setView(viewName) {
 }
 
 // -----------------------------------------------------------------------------
+function unlockWeddingVideoAudio() {
+  const vid = document.getElementById('custom-wedding-video');
+  if (vid) {
+    vid.muted = false;
+    vid.volume = 1.0;
+    const p = vid.play();
+    if (p !== undefined) {
+      p.then(() => {
+        vid.pause();
+        vid.currentTime = 0;
+      }).catch(() => {});
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
 // 3. Welcome / Landing Page Actions
 // -----------------------------------------------------------------------------
 btnStartCameraExperience?.addEventListener('click', async () => {
   await arScene.gyroManager.requestPermission();
   welcomeModal?.classList.add('hidden');
 
-  // Pre-load and prime wedding video with user tap gesture
-  const video = document.getElementById('custom-wedding-video');
-  if (video) {
-    video.load();
-  }
+  // Pre-load and unlock wedding video audio with user tap gesture
+  unlockWeddingVideoAudio();
 
   await setView('ar-camera');
   weddingAudio.init();
@@ -282,6 +295,11 @@ btnToggleMusic?.addEventListener('click', () => {
 
 window.addEventListener('pointerdown', () => {
   weddingAudio.init();
+  unlockWeddingVideoAudio();
+}, { once: true });
+
+window.addEventListener('touchstart', () => {
+  unlockWeddingVideoAudio();
 }, { once: true });
 
 // -----------------------------------------------------------------------------
@@ -391,6 +409,7 @@ formNewWish?.addEventListener('submit', (e) => {
 // -----------------------------------------------------------------------------
 tabBtnCamera?.addEventListener('click', async () => {
   await arScene.gyroManager.requestPermission();
+  unlockWeddingVideoAudio();
   setView('ar-camera');
 });
 tabBtnVirtual?.addEventListener('click', () => setView('virtual-3d'));
