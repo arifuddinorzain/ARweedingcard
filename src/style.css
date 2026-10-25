@@ -1301,8 +1301,8 @@ body.ar-camera-active #ar-guidance {
 .step-photo-frame {
   position: relative;
   width: 100%;
-  max-width: 155px;
-  aspect-ratio: 1 / 1;
+  max-width: 210px;
+  aspect-ratio: 16 / 9;
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);

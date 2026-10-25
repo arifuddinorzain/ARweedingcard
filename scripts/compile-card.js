@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { loadImage } from 'canvas';
+import { loadImage } from 'mind-ar/node_modules/canvas/index.js';
 import { OfflineCompiler } from 'mind-ar/src/image-target/offline-compiler.js';
 
 const __filename = fileURLToPath(import.meta.url);

@@ -143,17 +143,16 @@ export class TableCardGenerator {
       photoImg.onerror = resolve;
     });
 
-    const photoSize = 440;
-    const photoX = (1000 - photoSize) / 2;
-    const photoY = 270;
-    const photoW = photoSize;
-    const photoH = photoSize;
+    const photoW = 560;
+    const photoH = 315; // Exact 16:9 widescreen ratio (560 / 315 = 1.777778 = 16:9)
+    const photoX = (1000 - photoW) / 2;
+    const photoY = 275;
 
     // Photo shadow
     ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
     ctx.fillRect(photoX + 8, photoY + 8, photoW, photoH);
 
-    // Draw Couple Photo (Clean)
+    // Draw Couple Photo (Clean 16:9 Target)
     if (photoImg.complete && photoImg.naturalWidth > 0) {
       ctx.drawImage(photoImg, photoX, photoY, photoW, photoH);
     } else {
@@ -161,7 +160,7 @@ export class TableCardGenerator {
       ctx.fillRect(photoX, photoY, photoW, photoH);
       ctx.fillStyle = '#f3e5ab';
       ctx.font = '32px sans-serif';
-      ctx.fillText('Foto Pengantin', 500, 500);
+      ctx.fillText('Foto Pengantin', 500, 430);
     }
 
     // Photo Gold Border
@@ -173,7 +172,7 @@ export class TableCardGenerator {
     const bannerW = 720;
     const bannerH = 40;
     const bannerX = (1000 - bannerW) / 2;
-    const bannerY = 728;
+    const bannerY = 612;
 
     ctx.save();
     ctx.fillStyle = 'rgba(255, 252, 246, 0.94)';
@@ -202,9 +201,9 @@ export class TableCardGenerator {
       qrImg.onerror = resolve;
     });
 
-    const qrSize = 220;
+    const qrSize = 230;
     const qrX = (1000 - qrSize) / 2;
-    const qrY = 788;
+    const qrY = 675;
 
     // QR container box with shadow & gold border
     ctx.save();
@@ -227,10 +226,10 @@ export class TableCardGenerator {
 
     // 6. Step-by-Step Instructions & Event Details Plaque
     // (Solid Ivory Parchment Plaque that completely protects text from overlapping floral background)
-    const plaqueW = 680;
-    const plaqueH = 325;
+    const plaqueW = 700;
+    const plaqueH = 340;
     const plaqueX = (1000 - plaqueW) / 2;
-    const plaqueY = 1045;
+    const plaqueY = 945;
 
     ctx.save();
     ctx.shadowColor = 'rgba(40, 5, 10, 0.22)';

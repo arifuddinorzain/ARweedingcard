@@ -39,21 +39,21 @@
 
           <!-- Image Target 0: Couple Photo (Brings static photo alive into moving picture!) -->
           <a-entity id="mindar-target" mindar-image-target="targetIndex: 0">
-            <!-- 1. Still Photo Layer (Matches physical card photo 100% initially) -->
+            <!-- 1. Still Photo Layer (Matches physical card photo 100% initially, exact 16:9 ratio) -->
             <a-plane
               id="ar-still-photo-plane"
               position="0 0 0.008"
-              height="1.0"
+              height="0.5625"
               width="1.0"
               material="src: #card-photo-target; shader: flat; transparent: false; opacity: 1.0;"
               visible="true"
             ></a-plane>
 
-            <!-- 2. Video Layer (Fits the exact size of the image target) -->
+            <!-- 2. Video Layer (Fits the exact 16:9 widescreen video dimensions) -->
             <a-plane
               id="ar-living-plane"
               position="0 0 0.012"
-              height="1.0"
+              height="0.5625"
               width="1.0"
               material="src: #custom-wedding-video; shader: flat; transparent: false; opacity: 1.0;"
               visible="false"
@@ -64,17 +64,17 @@
             <a-plane
               id="ar-shimmer-plane"
               position="0 0 0.014"
-              height="1.0"
+              height="0.5625"
               width="1.0"
               material="color: #ffd700; shader: flat; transparent: true; opacity: 0.0;"
               visible="false"
             ></a-plane>
 
-            <!-- 4. Royal Gold Shimmer Border (Frames exact photo size) -->
+            <!-- 4. Royal Gold Shimmer Border (Frames exact 16:9 photo size) -->
             <a-plane
               id="ar-gold-border"
               position="0 0 0.005"
-              height="1.03"
+              height="0.59"
               width="1.03"
               material="color: #d4af37; shader: flat; opacity: 0.85;"
             ></a-plane>
@@ -82,7 +82,7 @@
             <!-- Floating 3D Greeting Banner -->
             <a-plane
               id="ar-floating-banner"
-              position="0 0.62 0.05"
+              position="0 0.42 0.05"
               height="0.16"
               width="0.9"
             ></a-plane>
@@ -90,7 +90,7 @@
             <!-- Floating Names Plaque -->
             <a-plane
               id="ar-floating-names"
-              position="0 -0.62 0.05"
+              position="0 -0.40 0.05"
               height="0.12"
               width="0.7"
             ></a-plane>

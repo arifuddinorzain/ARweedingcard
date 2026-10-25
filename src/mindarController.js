@@ -281,30 +281,45 @@ export class MindARController {
   fitVideoTextureToPlane() {
     if (!this.livingPlaneEl || !this.videoEl) return;
 
-    const mesh = this.livingPlaneEl.getObject3D('mesh');
-    if (!mesh || !mesh.material) return;
-
     const vWidth = this.videoEl.videoWidth || 1280;
     const vHeight = this.videoEl.videoHeight || 720;
     const vAspect = vWidth / vHeight; // e.g. 1.7777778 for 16:9 video
 
-    // Adjust video texture coordinates so center region fills the square plane without distortion
-    const map = mesh.material.map;
-    if (map) {
-      const pAspect = 1.0; // square target plane
-      if (vAspect > pAspect) {
-        const repeatX = pAspect / vAspect; // 720 / 1280 = 0.5625
-        const repeatY = 1.0;
-        const offsetX = (1.0 - repeatX) / 2; // 0.21875
-        map.repeat.set(repeatX, repeatY);
-        map.offset.set(offsetX, 0.0);
-      } else {
-        const repeatX = 1.0;
-        const repeatY = vAspect / pAspect;
-        const offsetY = (1.0 - repeatY) / 2;
-        map.repeat.set(repeatX, repeatY);
-        map.offset.set(0.0, offsetY);
-      }
+    // In MindAR, target width is 1.0, and target height is 1.0 / targetAspect
+    // For 16:9 (1280x720), plane height is exactly 720 / 1280 = 0.5625
+    const planeHeight = (1.0 / vAspect).toFixed(4);
+
+    this.livingPlaneEl.setAttribute('height', planeHeight);
+    this.livingPlaneEl.setAttribute('width', '1.0');
+
+    if (this.stillPlaneEl) {
+      this.stillPlaneEl.setAttribute('height', planeHeight);
+      this.stillPlaneEl.setAttribute('width', '1.0');
+    }
+    if (this.shimmerPlaneEl) {
+      this.shimmerPlaneEl.setAttribute('height', planeHeight);
+      this.shimmerPlaneEl.setAttribute('width', '1.0');
+    }
+    if (this.borderPlaneEl) {
+      this.borderPlaneEl.setAttribute('height', (parseFloat(planeHeight) + 0.03).toFixed(4));
+      this.borderPlaneEl.setAttribute('width', '1.03');
+    }
+
+    // Adjust floating banners relative to 16:9 plane
+    const halfH = parseFloat(planeHeight) / 2;
+    if (this.bannerPlaneEl) {
+      this.bannerPlaneEl.setAttribute('position', `0 ${(halfH + 0.14).toFixed(3)} 0.05`);
+    }
+    if (this.namesPlaneEl) {
+      this.namesPlaneEl.setAttribute('position', `0 ${(-halfH - 0.12).toFixed(3)} 0.05`);
+    }
+
+    const mesh = this.livingPlaneEl.getObject3D('mesh');
+    if (mesh && mesh.material && mesh.material.map) {
+      const map = mesh.material.map;
+      // Perfect 1:1 mapping - entire 16:9 video fits 16:9 plane with 0 distortion and 0 cropping
+      map.repeat.set(1.0, 1.0);
+      map.offset.set(0.0, 0.0);
       map.updateMatrix();
       map.needsUpdate = true;
     }
@@ -316,7 +331,7 @@ export class MindARController {
     // Show video plane immediately on target detection
     this.showVideoImmediately();
 
-    // Ensure video texture is fitted to 1:1 plane
+    // Ensure video texture is fitted to exact 16:9 plane
     this.fitVideoTextureToPlane();
 
     // Ensure video starts cleanly from beginning (0.0s)

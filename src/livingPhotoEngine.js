@@ -7,8 +7,8 @@
 export class LivingPhotoEngine {
   constructor(canvasId = 'living-photo-canvas') {
     this.canvas = document.getElementById(canvasId) || document.createElement('canvas');
-    this.canvas.width = 1000;
-    this.canvas.height = 1000;
+    this.canvas.width = 1280;
+    this.canvas.height = 720;
     this.ctx = this.canvas.getContext('2d');
 
     this.img = new Image();

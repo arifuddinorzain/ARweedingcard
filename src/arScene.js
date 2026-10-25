@@ -348,12 +348,11 @@ export class WeddingARScene {
       ctx.font = 'bold 36px serif';
       ctx.fillText(this.coupleName, 350, 140);
 
-      // Base printed photo placeholder on card (1:1 square matching pengantin.jpg)
-      const photoSize = 400;
-      const photoX = (700 - photoSize) / 2;
-      const photoY = 160;
-      const photoW = photoSize;
-      const photoH = photoSize;
+      // Base printed photo placeholder on card (16:9 widescreen matching pengantin.jpg & videokahwin.mp4)
+      const photoW = 440;
+      const photoH = 247.5; // Exact 16:9 ratio (440 * 9 / 16 = 247.5)
+      const photoX = (700 - photoW) / 2;
+      const photoY = 175;
 
       if (img && img.complete) {
         ctx.drawImage(img, photoX, photoY, photoW, photoH);
@@ -437,8 +436,8 @@ export class WeddingARScene {
     // Centered exactly over the 1:1 photo on the card:
     this.arMagnetGroup.position.set(0, 0.045, -0.069);
 
-    const magnetW = 0.24;
-    const magnetH = 0.24;
+    const magnetW = 0.28;
+    const magnetH = 0.1575; // Exact 16:9 ratio (0.28 * 9 / 16 = 0.1575)
 
     // 1. Dynamic Magnetic Soft Contact Shadow on Card Surface below
     const shadowCanvas = document.createElement('canvas');
@@ -540,9 +539,8 @@ export class WeddingARScene {
           shiftedUv = clamp(shiftedUv, 0.002, 0.998);
 
           vec4 photoColor = texture2D(uTexture, shiftedUv);
-          // Center-crop video to fit 1:1 square without squashing 16:9 ratio
-          vec2 videoUv = vec2((vUv.x - 0.5) * (720.0 / 1280.0) + 0.5, vUv.y);
-          vec4 videoColor = texture2D(uVideoTexture, videoUv);
+          // Perfect 16:9 mapping between couple photo and wedding video with 0 distortion
+          vec4 videoColor = texture2D(uVideoTexture, shiftedUv);
           vec4 texColor = mix(photoColor, videoColor, uBlendProgress);
 
           // 1. Diagonal Sunbeam / Light Sweep across the mosque & couple
