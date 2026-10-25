@@ -196,8 +196,9 @@ body.ar-camera-active #ar-guidance {
 
 .scanner-reticle-box {
   position: relative;
-  width: min(84vw, 340px);
-  height: min(112vw, 450px);
+  width: min(78vw, 300px);
+  height: min(104vw, 400px);
+  aspect-ratio: 3 / 4;
   border: none;
   box-shadow: none;
   border-radius: 16px;
@@ -1301,12 +1302,12 @@ body.ar-camera-active #ar-guidance {
 .step-photo-frame {
   position: relative;
   width: 100%;
-  max-width: 210px;
-  aspect-ratio: 16 / 9;
-  border-radius: 14px;
+  max-width: 195px;
+  aspect-ratio: 3 / 4;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  border: 2px solid rgba(212, 175, 55, 0.8);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(212, 175, 55, 0.85);
 }
 
 .step-photo-target {
@@ -1314,11 +1315,6 @@ body.ar-camera-active #ar-guidance {
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.3s ease;
-}
-
-.step-photo-frame:hover .step-photo-target {
-  transform: scale(1.03);
 }
 
 /* Clean Photo Target Display - No overlay badge or laser */
@@ -1515,7 +1511,7 @@ body.ar-camera-active #ar-guidance {
   }
 
   .step-photo-frame {
-    max-width: 200px;
+    max-width: 170px;
   }
 }
 
@@ -1539,7 +1535,7 @@ body.ar-camera-active #ar-guidance {
   }
 
   .step-photo-frame {
-    max-width: 180px;
+    max-width: 150px;
   }
 }
 

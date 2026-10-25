@@ -241,105 +241,137 @@ export class MindARController {
   }
 
   // =========================================================================
-  // INSTANT VIDEO DISPLAY & HIDE (Immediate playback as soon as target detected)
+  // SMOOTH DISSOLVE CROSSFADE & EXACT ALIGNMENT (From Still Photo to Living Video)
   // =========================================================================
-  showVideoImmediately() {
+  smoothDissolveToVideo(duration = 650) {
     if (this.fadeAnimId) {
       cancelAnimationFrame(this.fadeAnimId);
       this.fadeAnimId = null;
     }
-    // Hide static photo layer and show video plane
-    if (this.stillPlaneEl) this.stillPlaneEl.setAttribute('visible', 'false');
-    if (this.shimmerPlaneEl) this.shimmerPlaneEl.setAttribute('visible', 'false');
-    if (this.livingPlaneEl) {
-      this.livingPlaneEl.setAttribute('visible', 'true');
-      const mesh = this.livingPlaneEl.getObject3D('mesh');
-      if (mesh && mesh.material) {
-        mesh.material.opacity = 1.0;
-        mesh.material.transparent = false;
-        if (mesh.material.map) {
-          mesh.material.map.needsUpdate = true;
-        }
-        mesh.material.needsUpdate = true;
-      }
-    }
-    if (this.targetEl) this.targetEl.setAttribute('scale', '1 1 1');
-  }
 
-  hideVideoImmediately() {
-    if (this.fadeAnimId) {
-      cancelAnimationFrame(this.fadeAnimId);
-      this.fadeAnimId = null;
+    if (!this.livingPlaneEl || !this.stillPlaneEl) return;
+
+    // Both planes remain visible so still photo is seamlessly replaced by video
+    this.stillPlaneEl.setAttribute('visible', 'true');
+    this.livingPlaneEl.setAttribute('visible', 'true');
+
+    const stillMesh = this.stillPlaneEl.getObject3D('mesh');
+    const videoMesh = this.livingPlaneEl.getObject3D('mesh');
+
+    if (stillMesh && stillMesh.material) {
+      stillMesh.material.transparent = true;
+      stillMesh.material.opacity = 1.0;
+      stillMesh.material.depthWrite = false;
+      stillMesh.material.needsUpdate = true;
     }
-    // Show static photo layer and hide video plane
-    if (this.stillPlaneEl) this.stillPlaneEl.setAttribute('visible', 'true');
-    if (this.livingPlaneEl) this.livingPlaneEl.setAttribute('visible', 'false');
-    if (this.shimmerPlaneEl) this.shimmerPlaneEl.setAttribute('visible', 'false');
-    if (this.targetEl) this.targetEl.setAttribute('scale', '1 1 1');
+
+    if (videoMesh && videoMesh.material) {
+      videoMesh.material.transparent = true;
+      videoMesh.material.opacity = 0.0;
+      videoMesh.material.depthWrite = false;
+      videoMesh.material.needsUpdate = true;
+    }
+
+    const startTime = performance.now();
+
+    const step = (now) => {
+      if (!this.isTargetFound) return;
+
+      const progress = Math.min((now - startTime) / duration, 1.0);
+      // Smooth sinusoidal / cubic easing
+      const ease = progress < 0.5 
+        ? 4 * progress * progress * progress 
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+      if (videoMesh && videoMesh.material) {
+        videoMesh.material.opacity = ease;
+        videoMesh.material.needsUpdate = true;
+      }
+
+      if (progress < 1.0) {
+        this.fadeAnimId = requestAnimationFrame(step);
+      } else {
+        this.fadeAnimId = null;
+        if (videoMesh && videoMesh.material) {
+          videoMesh.material.opacity = 1.0;
+          videoMesh.material.needsUpdate = true;
+        }
+        console.log('✨ [MindAR] Seamless transition from photo to video completed!');
+      }
+    };
+
+    this.fadeAnimId = requestAnimationFrame(step);
   }
 
   fitVideoTextureToPlane() {
     if (!this.livingPlaneEl || !this.videoEl) return;
 
-    const vWidth = this.videoEl.videoWidth || 1280;
-    const vHeight = this.videoEl.videoHeight || 720;
-    const vAspect = vWidth / vHeight; // e.g. 1.7777778 for 16:9 video
+    // Target portrait image (540x720) has exact aspect ratio 3:4 (0.75).
+    // In MindAR target space, normalized width is 1.0 and height is exactly 720 / 540 = 1.3333.
+    const exactW = '1.0';
+    const exactH = '1.3333';
 
-    // In MindAR, target width is 1.0, and target height is 1.0 / targetAspect
-    // For 16:9 (1280x720), plane height is exactly 720 / 1280 = 0.5625
-    const planeHeight = (1.0 / vAspect).toFixed(4);
-
-    this.livingPlaneEl.setAttribute('height', planeHeight);
-    this.livingPlaneEl.setAttribute('width', '1.0');
+    // Set identical dimensions and locked Z positions
+    this.livingPlaneEl.setAttribute('width', exactW);
+    this.livingPlaneEl.setAttribute('height', exactH);
+    this.livingPlaneEl.setAttribute('position', '0 0 0.002');
 
     if (this.stillPlaneEl) {
-      this.stillPlaneEl.setAttribute('height', planeHeight);
-      this.stillPlaneEl.setAttribute('width', '1.0');
-    }
-    if (this.shimmerPlaneEl) {
-      this.shimmerPlaneEl.setAttribute('height', planeHeight);
-      this.shimmerPlaneEl.setAttribute('width', '1.0');
-    }
-    if (this.borderPlaneEl) {
-      this.borderPlaneEl.setAttribute('height', (parseFloat(planeHeight) + 0.03).toFixed(4));
-      this.borderPlaneEl.setAttribute('width', '1.03');
+      this.stillPlaneEl.setAttribute('width', exactW);
+      this.stillPlaneEl.setAttribute('height', exactH);
+      this.stillPlaneEl.setAttribute('position', '0 0 0.001');
     }
 
-    // Adjust floating banners relative to 16:9 plane
-    const halfH = parseFloat(planeHeight) / 2;
+    if (this.borderPlaneEl) {
+      this.borderPlaneEl.setAttribute('visible', 'false');
+    }
+
+    // Floating banners float independently with 3D depth above (y = 0.82) and below (y = -0.80) the portrait photo
     if (this.bannerPlaneEl) {
-      this.bannerPlaneEl.setAttribute('position', `0 ${(halfH + 0.14).toFixed(3)} 0.05`);
+      this.bannerPlaneEl.setAttribute('position', '0 0.82 0.02');
     }
     if (this.namesPlaneEl) {
-      this.namesPlaneEl.setAttribute('position', `0 ${(-halfH - 0.12).toFixed(3)} 0.05`);
+      this.namesPlaneEl.setAttribute('position', '0 -0.80 0.02');
     }
 
-    const mesh = this.livingPlaneEl.getObject3D('mesh');
-    if (mesh && mesh.material && mesh.material.map) {
-      const map = mesh.material.map;
-      // Perfect 1:1 mapping - entire 16:9 video fits 16:9 plane with 0 distortion and 0 cropping
-      map.repeat.set(1.0, 1.0);
-      map.offset.set(0.0, 0.0);
-      map.updateMatrix();
-      map.needsUpdate = true;
+    // Map still photo (540x720) 100% edge-to-edge
+    if (this.stillPlaneEl) {
+      const stillMesh = this.stillPlaneEl.getObject3D('mesh');
+      if (stillMesh && stillMesh.material && stillMesh.material.map) {
+        const map = stillMesh.material.map;
+        map.repeat.set(1.0, 1.0);
+        map.offset.set(0.0, 0.0);
+        map.updateMatrix();
+        map.needsUpdate = true;
+      }
+    }
+
+    // Map video (1280x720) center-cropped horizontally to 3:4 (540x720) so it matches the photo pixel-for-pixel
+    // repeatX = 540 / 1280 = 0.421875, offsetX = (1.0 - 0.421875) / 2 = 0.2890625
+    if (this.livingPlaneEl) {
+      const videoMesh = this.livingPlaneEl.getObject3D('mesh');
+      if (videoMesh && videoMesh.material && videoMesh.material.map) {
+        const map = videoMesh.material.map;
+        map.repeat.set(0.421875, 1.0);
+        map.offset.set(0.2890625, 0.0);
+        map.updateMatrix();
+        map.needsUpdate = true;
+      }
     }
   }
 
   async playWeddingVideo() {
     if (!this.videoEl) return;
 
-    // Show video plane immediately on target detection
-    this.showVideoImmediately();
-
-    // Ensure video texture is fitted to exact 16:9 plane
+    // Lock exact same size & position
     this.fitVideoTextureToPlane();
 
-    // Ensure video starts cleanly from beginning (0.0s)
+    // Reset video to start cleanly
     try {
       this.videoEl.currentTime = 0;
     } catch (e) {}
 
-    // Apply user sound preference: default is OFF (muted), or ON if user toggled sound button
+    // Apply sound preference (default muted, or unmuted if user enabled sound)
     if (this.isSoundActive) {
       this.videoEl.muted = false;
       this.videoEl.volume = 1.0;
@@ -358,11 +390,32 @@ export class MindARController {
       } catch (e2) {}
     }
 
-    // Ensure video plane stays active
-    this.showVideoImmediately();
+    // Trigger silky-smooth dissolve once the video is genuinely playing
+    if (this.videoEl.readyState >= 2 && !this.videoEl.paused) {
+      this.smoothDissolveToVideo(650);
+    } else {
+      const onReady = () => {
+        this.videoEl.removeEventListener('playing', onReady);
+        this.videoEl.removeEventListener('timeupdate', onReady);
+        if (this.isTargetFound) {
+          this.smoothDissolveToVideo(650);
+        }
+      };
+      this.videoEl.addEventListener('playing', onReady, { once: true });
+      this.videoEl.addEventListener('timeupdate', onReady, { once: true });
+      setTimeout(() => {
+        if (this.isTargetFound && !this.fadeAnimId) {
+          this.smoothDissolveToVideo(650);
+        }
+      }, 350);
+    }
   }
 
   pauseWeddingVideo() {
+    if (this.fadeAnimId) {
+      cancelAnimationFrame(this.fadeAnimId);
+      this.fadeAnimId = null;
+    }
     if (this.videoEl) {
       if (!this.videoEl.paused) {
         this.videoEl.pause();
@@ -371,7 +424,23 @@ export class MindARController {
         this.videoEl.currentTime = 0;
       } catch (e) {}
     }
-    this.hideVideoImmediately();
+
+    // Reset video opacity to 0 and ensure still photo is ready at 1.0 opacity
+    if (this.livingPlaneEl) {
+      const mesh = this.livingPlaneEl.getObject3D('mesh');
+      if (mesh && mesh.material) {
+        mesh.material.opacity = 0.0;
+        mesh.material.needsUpdate = true;
+      }
+    }
+    if (this.stillPlaneEl) {
+      this.stillPlaneEl.setAttribute('visible', 'true');
+      const mesh = this.stillPlaneEl.getObject3D('mesh');
+      if (mesh && mesh.material) {
+        mesh.material.opacity = 1.0;
+        mesh.material.needsUpdate = true;
+      }
+    }
   }
 
   async start() {

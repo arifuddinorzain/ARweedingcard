@@ -348,11 +348,11 @@ export class WeddingARScene {
       ctx.font = 'bold 36px serif';
       ctx.fillText(this.coupleName, 350, 140);
 
-      // Base printed photo placeholder on card (16:9 widescreen matching pengantin.jpg & videokahwin.mp4)
-      const photoW = 440;
-      const photoH = 247.5; // Exact 16:9 ratio (440 * 9 / 16 = 247.5)
+      // Base printed photo placeholder on card (3:4 portrait matching pengantin.jpg)
+      const photoW = 270;
+      const photoH = 360; // Exact 3:4 ratio (270 * 4 / 3 = 360)
       const photoX = (700 - photoW) / 2;
-      const photoY = 175;
+      const photoY = 160;
 
       if (img && img.complete) {
         ctx.drawImage(img, photoX, photoY, photoW, photoH);
@@ -433,11 +433,11 @@ export class WeddingARScene {
   // =========================================================================
   buildARMagnetPhoto() {
     this.arMagnetGroup = new THREE.Group();
-    // Centered exactly over the 1:1 photo on the card:
-    this.arMagnetGroup.position.set(0, 0.045, -0.069);
+    // Centered exactly over the 3:4 portrait photo on the card:
+    this.arMagnetGroup.position.set(0, 0.045, -0.05);
 
-    const magnetW = 0.28;
-    const magnetH = 0.1575; // Exact 16:9 ratio (0.28 * 9 / 16 = 0.1575)
+    const magnetW = 0.21;
+    const magnetH = 0.28; // Exact 3:4 ratio (0.21 * 4 / 3 = 0.28)
 
     // 1. Dynamic Magnetic Soft Contact Shadow on Card Surface below
     const shadowCanvas = document.createElement('canvas');
@@ -539,8 +539,9 @@ export class WeddingARScene {
           shiftedUv = clamp(shiftedUv, 0.002, 0.998);
 
           vec4 photoColor = texture2D(uTexture, shiftedUv);
-          // Perfect 16:9 mapping between couple photo and wedding video with 0 distortion
-          vec4 videoColor = texture2D(uVideoTexture, shiftedUv);
+          // Center-crop 16:9 widescreen video to 3:4 portrait (repeatX = 540/1280 = 0.421875, offsetX = 0.2890625)
+          vec2 videoUv = vec2(shiftedUv.x * 0.421875 + 0.2890625, shiftedUv.y);
+          vec4 videoColor = texture2D(uVideoTexture, videoUv);
           vec4 texColor = mix(photoColor, videoColor, uBlendProgress);
 
           // 1. Diagonal Sunbeam / Light Sweep across the mosque & couple
@@ -710,7 +711,7 @@ export class WeddingARScene {
     });
     this.btmPlaque = new THREE.Mesh(btmGeo, btmMat);
     // Floating angled right below the bottom edge of the photo
-    this.btmPlaque.position.set(0, 0.08, 0.085);
+    this.btmPlaque.position.set(0, 0.08, 0.12);
     this.btmPlaque.rotation.x = -Math.PI / 8;
     this.arAnchor.add(this.btmPlaque);
   }
@@ -842,7 +843,7 @@ export class WeddingARScene {
 
       // Smooth cinematic dissolve from photo (0.0) to video (1.0)
       const startTime = performance.now();
-      const dur = 1300; // 1.3s smooth dissolve
+      const dur = 700; // 0.7s smooth dissolve
 
       const fadeIn = (now) => {
         const p = Math.min((now - startTime) / dur, 1.0);
