@@ -367,13 +367,109 @@ document.querySelectorAll('.filter-chip[data-theme]').forEach(chip => {
   });
 });
 
+function captureActiveARSnapshot(coupleName, tableInfo) {
+  const mindarContainer = document.getElementById('mindar-scene-container');
+  const isWebARActive = mindarContainer && !mindarContainer.classList.contains('hidden');
+
+  if (isWebARActive) {
+    const aframeScene = document.getElementById('mindar-scene');
+    const cameraVideo = mindarContainer.querySelector('video') || document.getElementById('ar-video-feed');
+    const aframeCanvas = aframeScene?.canvas || aframeScene?.renderer?.domElement || mindarContainer.querySelector('canvas.a-canvas');
+
+    // Force an A-Frame render tick so current video frame & 3D entities are in drawing buffer
+    if (aframeScene && aframeScene.renderer && aframeScene.camera && aframeScene.object3D) {
+      try {
+        aframeScene.renderer.render(aframeScene.object3D, aframeScene.camera);
+      } catch (e) {}
+    }
+
+    const snapshotCanvas = document.createElement('canvas');
+    const width = Math.min(window.innerWidth * (window.devicePixelRatio || 1), 1080);
+    const height = Math.min(window.innerHeight * (window.devicePixelRatio || 1), 1920);
+    snapshotCanvas.width = width;
+    snapshotCanvas.height = height;
+    const ctx = snapshotCanvas.getContext('2d');
+
+    // 1. Draw live camera video feed (cover aspect-fit)
+    if (cameraVideo && cameraVideo.readyState >= 2) {
+      const vWidth = cameraVideo.videoWidth || 1280;
+      const vHeight = cameraVideo.videoHeight || 720;
+      const vAspect = vWidth / vHeight;
+      const cAspect = width / height;
+
+      let drawWidth = width;
+      let drawHeight = height;
+      let offsetX = 0;
+      let offsetY = 0;
+
+      if (vAspect > cAspect) {
+        drawWidth = height * vAspect;
+        offsetX = -(drawWidth - width) / 2;
+      } else {
+        drawHeight = width / vAspect;
+        offsetY = -(drawHeight - height) / 2;
+      }
+      ctx.drawImage(cameraVideo, offsetX, offsetY, drawWidth, drawHeight);
+    } else {
+      const grad = ctx.createLinearGradient(0, 0, 0, height);
+      grad.addColorStop(0, '#0a1612');
+      grad.addColorStop(0.5, '#12251e');
+      grad.addColorStop(1, '#08100d');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    // 2. Draw A-Frame 3D WebAR overlay (the living moving video on the card + floating banners)
+    if (aframeCanvas && aframeCanvas.width > 0 && aframeCanvas.height > 0) {
+      ctx.drawImage(aframeCanvas, 0, 0, width, height);
+    }
+
+    // 3. Royal Gold Photo Frame
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = Math.max(width * 0.008, 4);
+    ctx.strokeRect(18, 18, width - 36, height - 36);
+
+    ctx.strokeStyle = 'rgba(243, 229, 171, 0.45)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(26, 26, width - 52, height - 52);
+
+    // 4. Elegant Bottom Plaque
+    const bannerHeight = Math.max(Math.floor(height * 0.085), 75);
+    const bannerY = height - 28 - bannerHeight;
+    ctx.fillStyle = 'rgba(10, 20, 16, 0.90)';
+    ctx.beginPath();
+    ctx.roundRect(28, bannerY, width - 56, bannerHeight, 16);
+    ctx.fill();
+
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.roundRect(28, bannerY, width - 56, bannerHeight, 16);
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#f3e5ab';
+    ctx.font = `bold ${Math.max(Math.floor(width * 0.042), 20)}px 'Playfair Display', serif`;
+    ctx.fillText(`Walimatulurus ${coupleName}`, width / 2, bannerY + bannerHeight * 0.45);
+
+    ctx.fillStyle = '#d4af37';
+    ctx.font = `${Math.max(Math.floor(width * 0.026), 13)}px 'Plus Jakarta Sans', sans-serif`;
+    ctx.fillText(`✨ ${tableInfo} • Kenangan AR Kad Kahwin ✨`, width / 2, bannerY + bannerHeight * 0.78);
+
+    return snapshotCanvas.toDataURL('image/png');
+  }
+
+  // Fallback for 3D simulation mode
+  return arScene.captureSnapshot(coupleName, tableInfo);
+}
+
 // -----------------------------------------------------------------------------
 // 7. Interactive Snapshot & Wishing Wall
 // -----------------------------------------------------------------------------
 btnTakeSnapshot?.addEventListener('click', () => {
   const couple = appState.weddingInfo.couple;
   const table = appState.weddingInfo.table;
-  const snapshotDataUrl = arScene.captureSnapshot(couple, table);
+  const snapshotDataUrl = captureActiveARSnapshot(couple, table);
 
   snapshotPreviewImg.src = snapshotDataUrl;
   btnDownloadSnap.href = snapshotDataUrl;

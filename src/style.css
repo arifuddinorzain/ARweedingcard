@@ -833,17 +833,19 @@ body.ar-camera-active #ar-guidance {
    Modal Sheets & Glass Cards
    -------------------------------------------------------------------------- */
 .modal-backdrop {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(4, 10, 8, 0.8);
-  backdrop-filter: blur(10px);
+  background: rgba(4, 10, 8, 0.85);
+  backdrop-filter: blur(12px);
   z-index: 50;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
   opacity: 1;
   transition: opacity 0.3s ease;
 }
@@ -1877,19 +1879,19 @@ body.ar-camera-active #ar-guidance {
   transform: scale(0.97);
 }
 
-/* Modal Bottom Sheets */
+/* Centered Modals */
 .modal-sheet {
-  width: 100%;
-  max-width: 520px;
-  max-height: 85vh;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-  padding: 16px 20px 24px;
+  width: 92%;
+  max-width: 440px;
+  max-height: 86vh;
+  border-radius: 24px;
+  padding: 20px 22px 24px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  position: absolute;
-  bottom: 0;
+  position: relative;
+  margin: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(212, 175, 55, 0.35) inset;
 }
 
 .modal-handle-bar {
@@ -2045,22 +2047,31 @@ body.ar-camera-active #ar-guidance {
 }
 
 /* Snapshot Modal */
+.snapshot-sheet {
+  max-width: 420px;
+  padding: 16px 18px 20px;
+  gap: 12px;
+}
+
 .snapshot-preview-box {
   width: 100%;
-  max-height: 52vh;
+  max-height: 54vh;
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 2px solid var(--color-gold-primary);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.65);
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #06110d;
 }
 
 .snapshot-preview-box img {
   width: 100%;
   height: 100%;
+  max-height: 54vh;
   object-fit: contain;
+  display: block;
 }
 
 .snapshot-actions-row {

@@ -1075,6 +1075,13 @@ export class WeddingARScene {
     snapshotCanvas.height = height;
     const ctx = snapshotCanvas.getContext('2d');
 
+    // Position camera centered and upright facing the wedding card for a perfect snapshot
+    const prevPos = this.camera.position.clone();
+    const prevRot = this.camera.rotation.clone();
+    this.camera.position.set(0, 0.58, 0.42);
+    this.camera.lookAt(0, 0.08, -0.04);
+    this.renderer.render(this.scene, this.camera);
+
     if (this.isCameraActive && this.video.readyState >= 2) {
       const vWidth = this.video.videoWidth;
       const vHeight = this.video.videoHeight;
@@ -1104,6 +1111,10 @@ export class WeddingARScene {
     }
 
     ctx.drawImage(this.canvas, 0, 0);
+
+    // Restore camera to previous user view
+    this.camera.position.copy(prevPos);
+    this.camera.rotation.copy(prevRot);
 
     // Royal Gold Photo Frame
     ctx.strokeStyle = '#d4af37';
