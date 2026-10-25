@@ -68,6 +68,21 @@ export class TableCardGenerator {
     }
   }
 
+  // Helper to draw rounded rectangle on Canvas
+  drawRoundedRect(ctx, x, y, width, height, radius) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+  }
+
   // Generate an offscreen HTML Canvas of the Wedding Card (Used as 3D Texture & A4 PDF Download)
   async generateCardCanvas() {
     const canvas = document.createElement('canvas');
@@ -128,9 +143,9 @@ export class TableCardGenerator {
       photoImg.onerror = resolve;
     });
 
-    const photoSize = 480;
+    const photoSize = 440;
     const photoX = (1000 - photoSize) / 2;
-    const photoY = 275;
+    const photoY = 270;
     const photoW = photoSize;
     const photoH = photoSize;
 
@@ -146,18 +161,37 @@ export class TableCardGenerator {
       ctx.fillRect(photoX, photoY, photoW, photoH);
       ctx.fillStyle = '#f3e5ab';
       ctx.font = '32px sans-serif';
-      ctx.fillText('Foto Pengantin', 500, 520);
+      ctx.fillText('Foto Pengantin', 500, 500);
     }
 
     // Photo Gold Border
     ctx.strokeStyle = '#d4af37';
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 5;
     ctx.strokeRect(photoX, photoY, photoW, photoH);
 
-    // 4. Instruction Banner
-    ctx.fillStyle = '#aa820a';
-    ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('▼ IMBAS KOD QR DI BAWAH & HALAKAN KAMERA KE FOTO DI ATAS ▼', 500, 805);
+    // 4. Instruction Banner (Pill badge)
+    const bannerW = 620;
+    const bannerH = 40;
+    const bannerX = (1000 - bannerW) / 2;
+    const bannerY = 728;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 252, 246, 0.94)';
+    ctx.shadowColor = 'rgba(60, 10, 15, 0.12)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetY = 3;
+    this.drawRoundedRect(ctx, bannerX, bannerY, bannerW, bannerH, 20);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 1.8;
+    this.drawRoundedRect(ctx, bannerX, bannerY, bannerW, bannerH, 20);
+    ctx.stroke();
+
+    ctx.fillStyle = '#8c6d12';
+    ctx.font = 'bold 15px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText('▼ IMBAS KOD QR DI BAWAH & HALAKAN KAMERA KE FOTO DI ATAS ▼', 500, bannerY + 25);
 
     // 5. QR Code Section
     const qrDataUrl = await this.getQRCodeDataUrl();
@@ -168,37 +202,92 @@ export class TableCardGenerator {
       qrImg.onerror = resolve;
     });
 
-    const qrSize = 250;
+    const qrSize = 220;
     const qrX = (1000 - qrSize) / 2;
-    const qrY = 835;
+    const qrY = 788;
 
-    // QR container box
+    // QR container box with shadow & gold border
+    ctx.save();
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20);
+    ctx.shadowColor = 'rgba(60, 10, 15, 0.16)';
+    ctx.shadowBlur = 14;
+    ctx.shadowOffsetY = 4;
+    this.drawRoundedRect(ctx, qrX - 10, qrY - 10, qrSize + 20, qrSize + 20, 16);
+    ctx.fill();
+    ctx.restore();
+
     ctx.strokeStyle = '#d4af37';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20);
+    ctx.lineWidth = 3.5;
+    this.drawRoundedRect(ctx, qrX - 10, qrY - 10, qrSize + 20, qrSize + 20, 16);
+    ctx.stroke();
 
     if (qrImg.complete) {
       ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
     }
 
-    // 6. Step-by-Step Instructions Text
+    // 6. Step-by-Step Instructions & Event Details Plaque
+    // (Solid Ivory Parchment Plaque that completely protects text from overlapping floral background)
+    const plaqueW = 680;
+    const plaqueH = 325;
+    const plaqueX = (1000 - plaqueW) / 2;
+    const plaqueY = 1045;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(40, 5, 10, 0.22)';
+    ctx.shadowBlur = 22;
+    ctx.shadowOffsetY = 6;
+    ctx.fillStyle = 'rgba(255, 253, 248, 0.96)';
+    this.drawRoundedRect(ctx, plaqueX, plaqueY, plaqueW, plaqueH, 22);
+    ctx.fill();
+    ctx.restore();
+
+    // Outer Gold Border
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 3.5;
+    this.drawRoundedRect(ctx, plaqueX, plaqueY, plaqueW, plaqueH, 22);
+    ctx.stroke();
+
+    // Inner Hairline Inset Gold Border
+    ctx.strokeStyle = 'rgba(212, 175, 55, 0.55)';
+    ctx.lineWidth = 1;
+    this.drawRoundedRect(ctx, plaqueX + 6, plaqueY + 6, plaqueW - 12, plaqueH - 12, 16);
+    ctx.stroke();
+
+    // Text inside the Plaque - 100% High Contrast & Legible
+    // Step 1
     ctx.fillStyle = '#3a0810';
-    ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('1. Imbas QR dengan telefon  •  2. Halakan kamera ke foto pengantin', 500, 1145);
-    ctx.fillStyle = '#6b1d28';
-    ctx.font = 'italic 18px "Playfair Display", serif';
-    ctx.fillText('Saksikan Foto Pengantin Hidup & Video Kahwin Bermain Terus Di Atas Kad! ✨', 500, 1180);
+    ctx.font = 'bold 18.5px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText('1. Imbas Kod QR di atas menggunakan kamera telefon', 500, plaqueY + 42);
 
-    // 7. Footer Info
+    // Step 2
+    ctx.fillStyle = '#3a0810';
+    ctx.font = 'bold 18.5px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText('2. Halakan kamera terus ke Foto Pengantin di atas', 500, plaqueY + 76);
+
+    // Reward Highlight
+    ctx.fillStyle = '#881337';
+    ctx.font = 'italic 16.5px "Playfair Display", serif';
+    ctx.fillText('✨ Saksikan Foto Pengantin Hidup & Video Kahwin Bermain Terus Di Atas Kad! ✨', 500, plaqueY + 114);
+
+    // Decorative Filigree Divider
+    ctx.fillStyle = '#d4af37';
+    ctx.font = '14px "Playfair Display", serif';
+    ctx.fillText('❖ ────────────────────── ❖', 500, plaqueY + 148);
+
+    // Wedding Date
+    ctx.fillStyle = '#4a0e17';
+    ctx.font = 'bold 23px "Playfair Display", serif';
+    ctx.fillText(this.currentData.weddingDate, 500, plaqueY + 188);
+
+    // Venue
+    ctx.fillStyle = '#5c1825';
+    ctx.font = 'bold 18px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText(this.currentData.venue, 500, plaqueY + 226);
+
+    // Tagline
     ctx.fillStyle = '#aa820a';
-    ctx.font = 'bold 22px "Playfair Display", serif';
-    ctx.fillText(`${this.currentData.weddingDate}  •  ${this.currentData.venue}`, 500, 1240);
-
-    ctx.fillStyle = '#8c6d12';
-    ctx.font = '14px "Cinzel", serif';
-    ctx.fillText('PENGALAMAN DIGITAL WEBAR HOLOGRAM • KAD JEMPUTAN RASMI', 500, 1285);
+    ctx.font = 'bold 12.5px "Cinzel", serif';
+    ctx.fillText('PENGALAMAN DIGITAL WEBAR HOLOGRAM • KAD JEMPUTAN RASMI', 500, plaqueY + 272);
 
     return canvas;
   }
