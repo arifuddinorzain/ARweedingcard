@@ -483,6 +483,25 @@ window.addEventListener('switch-to-ar', (e) => {
   setView('ar-camera');
 });
 
+// Welcome Modal CTA & Navigation Handlers
+btnStartCameraExperience?.addEventListener('click', async () => {
+  welcomeModal?.classList.add('hidden');
+  unlockWeddingVideoAudio();
+  weddingAudio.init();
+  await arScene.gyroManager.requestPermission();
+  setView('ar-camera');
+});
+
+btnStart3dExperience?.addEventListener('click', () => {
+  welcomeModal?.classList.add('hidden');
+  setView('virtual-3d');
+});
+
+btnLandingShowCard?.addEventListener('click', () => {
+  welcomeModal?.classList.add('hidden');
+  setView('table-card');
+});
+
 // -----------------------------------------------------------------------------
 // 9. QR Code Initializer for Stories AR Hero Card
 // -----------------------------------------------------------------------------
