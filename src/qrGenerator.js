@@ -22,31 +22,44 @@ export class TableCardGenerator {
       origin = `${window.location.protocol}//192.168.0.38:${window.location.port || '5173'}`;
     }
     const baseUrl = origin + window.location.pathname;
-    const params = new URLSearchParams({
-      couple: this.currentData.coupleName,
-      table: this.currentData.tableNumber,
-      theme: this.currentData.tableTheme,
-      date: this.currentData.weddingDate,
-      venue: this.currentData.venue
-    });
+    const params = new URLSearchParams();
+
+    // Set couple name
+    if (this.currentData.coupleName) {
+      params.set('couple', this.currentData.coupleName);
+    }
+    // Only add additional parameters if customized beyond defaults (keeps QR code matrix clean & dots large)
+    if (this.currentData.tableNumber && this.currentData.tableNumber !== 'Meja 07') {
+      params.set('table', this.currentData.tableNumber);
+    }
+    if (this.currentData.tableTheme && this.currentData.tableTheme !== 'Kasih Abadi') {
+      params.set('theme', this.currentData.tableTheme);
+    }
+    if (this.currentData.weddingDate && this.currentData.weddingDate !== '24 Disember 2026') {
+      params.set('date', this.currentData.weddingDate);
+    }
+    if (this.currentData.venue && this.currentData.venue !== 'Dewan Perdana Felda, Kuala Lumpur') {
+      params.set('venue', this.currentData.venue);
+    }
     if (autoScan) {
       params.set('scan', '1');
     }
-    return `${baseUrl}?${params.toString()}`;
+    const queryString = params.toString();
+    return queryString ? `${baseUrl}?${queryString}` : baseUrl;
   }
 
-  // Generate QR Code as DataURL
+  // Generate QR Code as DataURL with optimal phone camera detection parameters
   async getQRCodeDataUrl() {
     const url = this.generateTableUrl();
     try {
       return await QRCode.toDataURL(url, {
-        width: 380,
-        margin: 1,
+        width: 480,
+        margin: 2,
         color: {
-          dark: '#1a0c0e',
+          dark: '#000000',
           light: '#ffffff'
         },
-        errorCorrectionLevel: 'H'
+        errorCorrectionLevel: 'M'
       });
     } catch (err) {
       console.error('Error generating QR code', err);

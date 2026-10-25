@@ -488,9 +488,31 @@ window.addEventListener('switch-to-ar', (e) => {
 // -----------------------------------------------------------------------------
 async function initStoriesDemoQR() {
   const qrImg = document.getElementById('stories-hero-qr');
+  const qrZoomImg = document.getElementById('qr-zoom-img');
   if (qrImg) {
     const qrDataUrl = await cardGen.getQRCodeDataUrl();
     qrImg.src = qrDataUrl;
+    if (qrZoomImg) {
+      qrZoomImg.src = qrDataUrl;
+    }
+  }
+
+  // Interactive Lightbox: Click QR thumbnail to enlarge
+  const btnZoomQr = document.getElementById('btn-zoom-qr');
+  const qrZoomModal = document.getElementById('qr-zoom-modal');
+  const btnCloseQrZoom = document.getElementById('btn-close-qr-zoom');
+  const qrZoomBackdrop = document.getElementById('qr-zoom-backdrop');
+
+  if (btnZoomQr && qrZoomModal) {
+    btnZoomQr.addEventListener('click', () => {
+      qrZoomModal.classList.remove('hidden');
+    });
+    btnCloseQrZoom?.addEventListener('click', () => {
+      qrZoomModal.classList.add('hidden');
+    });
+    qrZoomBackdrop?.addEventListener('click', () => {
+      qrZoomModal.classList.add('hidden');
+    });
   }
 }
 

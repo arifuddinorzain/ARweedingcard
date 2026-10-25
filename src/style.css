@@ -1158,27 +1158,63 @@ body.ar-camera-active #ar-guidance {
 .stories-qr-block {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  background: #fffbf7;
+  border: 1.5px solid #fed7aa;
+  border-radius: 20px;
+  padding: 8px 16px 8px 8px;
+  box-shadow: 0 4px 16px rgba(234, 88, 12, 0.08);
+  transition: all 0.25s ease;
+}
+
+.stories-qr-block:hover {
+  border-color: #ff7a00;
+  box-shadow: 0 8px 24px rgba(234, 88, 12, 0.16);
+  background: #ffffff;
 }
 
 .qr-thumbnail-box {
-  width: 80px;
-  height: 80px;
+  position: relative;
+  width: 140px;
+  height: 140px;
   background: #ffffff;
-  border: 1.5px solid #e5e7eb;
+  border: 2px solid #ea580c;
   border-radius: 14px;
-  padding: 5px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  padding: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s ease;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .qr-thumbnail-box:hover {
   transform: scale(1.05);
-  border-color: #ff7a00;
+  box-shadow: 0 8px 26px rgba(234, 88, 12, 0.28);
+}
+
+.qr-zoom-hint {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(17, 24, 39, 0.88);
+  color: #fef08a;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.qr-thumbnail-box:hover .qr-zoom-hint {
+  opacity: 1;
 }
 
 .stories-qr-img {
@@ -1187,13 +1223,42 @@ body.ar-camera-active #ar-guidance {
   object-fit: contain;
   display: block;
   border-radius: 8px;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 
 .qr-caption {
-  font-size: 13px;
-  color: #6b7280;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.qr-caption-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #ea580c;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.qr-caption-main {
+  font-size: 13.5px;
+  color: #1f2937;
   line-height: 1.35;
   font-weight: 500;
+}
+
+.qr-caption-main strong {
+  color: #111827;
+  font-weight: 700;
+}
+
+.qr-caption-sub {
+  font-size: 11.5px;
+  color: #15803d;
+  font-weight: 600;
 }
 
 /* Secondary Navigation links */
@@ -1274,6 +1339,130 @@ body.ar-camera-active #ar-guidance {
   }
 }
 
+/* ==========================================================================
+   QR Code Lightbox / Zoom Modal
+   ========================================================================== */
+.qr-zoom-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.qr-zoom-modal.hidden {
+  display: none !important;
+}
+
+.qr-zoom-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(10px);
+}
+
+.qr-zoom-dialog {
+  position: relative;
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 34px 28px;
+  max-width: 440px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 25px 65px -10px rgba(0, 0, 0, 0.4);
+  z-index: 1;
+  animation: zoomDialogIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes zoomDialogIn {
+  from {
+    transform: scale(0.9) translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.qr-zoom-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: #f3f4f6;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 22px;
+  line-height: 1;
+  color: #4b5563;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.qr-zoom-close:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  transform: scale(1.08);
+}
+
+.qr-zoom-badge {
+  display: inline-block;
+  background: #fff7ed;
+  color: #ea580c;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  letter-spacing: 0.6px;
+  margin-bottom: 16px;
+  border: 1px solid #fed7aa;
+}
+
+.qr-zoom-box {
+  width: 270px;
+  height: 270px;
+  margin: 0 auto 18px auto;
+  padding: 12px;
+  background: #ffffff;
+  border: 3px solid #ea580c;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(234, 88, 12, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-zoom-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  border-radius: 10px;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+.qr-zoom-title {
+  font-family: 'Plus Jakarta Sans', var(--font-sans);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 6px 0;
+}
+
+.qr-zoom-desc {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.45;
+  margin: 0;
+}
 
 .mockup-media-container {
   position: relative;

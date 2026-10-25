@@ -260,11 +260,16 @@
                 Open the live demo ➔
               </button>
 
-              <div class="stories-qr-block">
-                <div class="qr-thumbnail-box">
+              <div class="stories-qr-block" id="stories-qr-block">
+                <div class="qr-thumbnail-box" id="btn-zoom-qr" title="Klik untuk besarkan kod QR / Click to enlarge">
                   <img src="" alt="Scan QR to open WebAR" class="stories-qr-img" id="stories-hero-qr" />
+                  <span class="qr-zoom-hint">🔍 Besarkan</span>
                 </div>
-                <span class="qr-caption">or scan with your<br>phone camera</span>
+                <div class="qr-caption">
+                  <span class="qr-caption-tag">📱 IMBAS KAMERA</span>
+                  <span class="qr-caption-main">or scan with your<br><strong>phone camera</strong></span>
+                  <span class="qr-caption-sub">Automatik buka WebAR ✨</span>
+                </div>
               </div>
             </div>
 
@@ -351,6 +356,20 @@
               📲 Kongsi (WhatsApp / Story)
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- Lightbox Modal for Enlarged QR Code -->
+      <div id="qr-zoom-modal" class="qr-zoom-modal hidden">
+        <div class="qr-zoom-backdrop" id="qr-zoom-backdrop"></div>
+        <div class="qr-zoom-dialog">
+          <button class="qr-zoom-close" id="btn-close-qr-zoom" aria-label="Tutup Paparan">&times;</button>
+          <div class="qr-zoom-badge">📱 IMBAS DENGAN KAMERA TELEFON</div>
+          <div class="qr-zoom-box">
+            <img src="" alt="Kod QR WebAR Bersaiz Besar" id="qr-zoom-img" />
+          </div>
+          <h3 class="qr-zoom-title">Buka Pengalaman WebAR Kamera</h3>
+          <p class="qr-zoom-desc">Halakan kamera telefon anda ke kod QR ini untuk terus membuka aplikasi WebAR secara automatik.</p>
         </div>
       </div>
 
