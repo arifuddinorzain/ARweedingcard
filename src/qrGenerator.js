@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+import { jsPDF } from 'jspdf';
 
 export class TableCardGenerator {
   constructor(containerId) {
@@ -67,69 +68,58 @@ export class TableCardGenerator {
     }
   }
 
-  // Generate an offscreen HTML Canvas of the Wedding Card (Used as 3D Texture & Download)
+  // Generate an offscreen HTML Canvas of the Wedding Card (Used as 3D Texture & A4 PDF Download)
   async generateCardCanvas() {
     const canvas = document.createElement('canvas');
+    // Calibrated to standard A4 portrait ratio (1 : 1.414)
     canvas.width = 1000;
-    canvas.height = 1400;
+    canvas.height = 1414;
     const ctx = canvas.getContext('2d');
 
-    // 1. Background: Deep royal parchment with burgundy & gold accents
-    const bgGrad = ctx.createLinearGradient(0, 0, 1000, 1400);
-    bgGrad.addColorStop(0, '#fdfbf7');
-    bgGrad.addColorStop(0.5, '#f7f1e5');
-    bgGrad.addColorStop(1, '#eee2cc');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, 1000, 1400);
+    // 1. Background: Load authentic royal floral wedding card template
+    const bgImg = new Image();
+    bgImg.crossOrigin = 'anonymous';
+    bgImg.src = '/floral-card-bg.jpg';
+    await new Promise((resolve) => {
+      bgImg.onload = resolve;
+      bgImg.onerror = resolve;
+    });
 
-    // 2. Ornate Royal Double Gold Borders
-    ctx.strokeStyle = '#d4af37';
-    ctx.lineWidth = 10;
-    ctx.strokeRect(30, 30, 940, 1340);
+    if (bgImg.complete && bgImg.naturalWidth > 0) {
+      ctx.drawImage(bgImg, 0, 0, 1000, 1414);
+    } else {
+      const bgGrad = ctx.createLinearGradient(0, 0, 1000, 1414);
+      bgGrad.addColorStop(0, '#fdfbf7');
+      bgGrad.addColorStop(0.5, '#f7f1e5');
+      bgGrad.addColorStop(1, '#eee2cc');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 1000, 1414);
 
-    ctx.strokeStyle = 'rgba(170, 130, 10, 0.45)';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(46, 46, 908, 1308);
-
-    // Corner Ornaments
-    const drawCorner = (x, y, flipX, flipY) => {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.scale(flipX, flipY);
       ctx.strokeStyle = '#d4af37';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(10, 35);
-      ctx.lineTo(35, 35);
-      ctx.lineTo(35, 10);
-      ctx.stroke();
-      ctx.restore();
-    };
-    drawCorner(50, 50, 1, 1);
-    drawCorner(950, 50, -1, 1);
-    drawCorner(50, 1350, 1, -1);
-    drawCorner(950, 1350, -1, -1);
+      ctx.lineWidth = 10;
+      ctx.strokeRect(30, 30, 940, 1354);
+    }
 
-    // 3. Header Typography
+    // 2. Header Typography
     ctx.fillStyle = '#6b1d28';
     ctx.textAlign = 'center';
-    ctx.font = 'bold 26px "Playfair Display", serif';
-    ctx.fillText('بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ', 500, 95);
+    ctx.font = 'bold 24px "Playfair Display", serif';
+    ctx.fillText('بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ', 500, 120);
 
     ctx.fillStyle = '#aa820a';
-    ctx.font = 'bold 20px "Cinzel", serif';
+    ctx.font = 'bold 18px "Cinzel", serif';
     ctx.letterSpacing = '4px';
-    ctx.fillText('WALIMATULURUS', 500, 135);
+    ctx.fillText('WALIMATULURUS', 500, 160);
 
     ctx.fillStyle = '#4a0e17';
-    ctx.font = 'bold 52px "Playfair Display", serif';
-    ctx.fillText(this.currentData.coupleName, 500, 200);
+    ctx.font = 'bold 48px "Playfair Display", serif';
+    ctx.fillText(this.currentData.coupleName, 500, 220);
 
-    ctx.fillStyle = '#aa820a';
-    ctx.font = '22px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText(`✨ ${this.currentData.tableNumber} • ${this.currentData.tableTheme} ✨`, 500, 235);
+    ctx.fillStyle = '#8c6d12';
+    ctx.font = '20px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText(`✨ ${this.currentData.tableNumber} • ${this.currentData.tableTheme} ✨`, 500, 255);
 
-    // 4. Couple Photo (The AR Tracking Target Image)
+    // 3. Couple Photo (The AR Tracking Target Image - 100% CLEAN, NO OVERLAY BADGE)
     const photoImg = new Image();
     photoImg.crossOrigin = 'anonymous';
     photoImg.src = this.currentData.photoUrl;
@@ -138,9 +128,9 @@ export class TableCardGenerator {
       photoImg.onerror = resolve;
     });
 
-    const photoSize = 540;
+    const photoSize = 480;
     const photoX = (1000 - photoSize) / 2;
-    const photoY = 255;
+    const photoY = 275;
     const photoW = photoSize;
     const photoH = photoSize;
 
@@ -148,7 +138,7 @@ export class TableCardGenerator {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
     ctx.fillRect(photoX + 8, photoY + 8, photoW, photoH);
 
-    // Draw Couple Photo
+    // Draw Couple Photo (Clean)
     if (photoImg.complete && photoImg.naturalWidth > 0) {
       ctx.drawImage(photoImg, photoX, photoY, photoW, photoH);
     } else {
@@ -164,22 +154,12 @@ export class TableCardGenerator {
     ctx.lineWidth = 6;
     ctx.strokeRect(photoX, photoY, photoW, photoH);
 
-    // AR Target Badge on Photo
-    ctx.fillStyle = 'rgba(74, 14, 23, 0.92)';
-    ctx.fillRect(photoX + 70, photoY + photoH - 42, 400, 36);
-    ctx.strokeStyle = '#d4af37';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(photoX + 70, photoY + photoH - 42, 400, 36);
-    ctx.fillStyle = '#f3e5ab';
-    ctx.font = 'bold 15px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('🧲 SASARAN KAMERA AR MAGNET 🧲', 500, photoY + photoH - 18);
-
-    // 5. Instruction Banner
+    // 4. Instruction Banner
     ctx.fillStyle = '#aa820a';
-    ctx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('▼ IMBAS KOD QR DI BAWAH & HALAKAN KAMERA KE FOTO DI ATAS ▼', 500, 835);
+    ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText('▼ IMBAS KOD QR DI BAWAH & HALAKAN KAMERA KE FOTO DI ATAS ▼', 500, 805);
 
-    // 6. QR Code Section
+    // 5. QR Code Section
     const qrDataUrl = await this.getQRCodeDataUrl();
     const qrImg = new Image();
     qrImg.src = qrDataUrl;
@@ -190,7 +170,7 @@ export class TableCardGenerator {
 
     const qrSize = 250;
     const qrX = (1000 - qrSize) / 2;
-    const qrY = 860;
+    const qrY = 835;
 
     // QR container box
     ctx.fillStyle = '#ffffff';
@@ -203,24 +183,53 @@ export class TableCardGenerator {
       ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
     }
 
-    // 7. Step-by-Step Instructions Text
+    // 6. Step-by-Step Instructions Text
     ctx.fillStyle = '#3a0810';
     ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
     ctx.fillText('1. Imbas QR dengan telefon  •  2. Halakan kamera ke foto pengantin', 500, 1145);
     ctx.fillStyle = '#6b1d28';
     ctx.font = 'italic 18px "Playfair Display", serif';
-    ctx.fillText('Saksikan Foto Pengantin Hidup & Video Kahwin Bermain Terus Di Atas Kad! ✨', 500, 1175);
+    ctx.fillText('Saksikan Foto Pengantin Hidup & Video Kahwin Bermain Terus Di Atas Kad! ✨', 500, 1180);
 
-    // 8. Footer Info
+    // 7. Footer Info
     ctx.fillStyle = '#aa820a';
     ctx.font = 'bold 22px "Playfair Display", serif';
-    ctx.fillText(`${this.currentData.weddingDate}  •  ${this.currentData.venue}`, 500, 1235);
+    ctx.fillText(`${this.currentData.weddingDate}  •  ${this.currentData.venue}`, 500, 1240);
 
     ctx.fillStyle = '#8c6d12';
     ctx.font = '14px "Cinzel", serif';
-    ctx.fillText('PENGALAMAN DIGITAL WEBAR HOLOGRAM • KAD JEMPUTAN RASMI', 500, 1275);
+    ctx.fillText('PENGALAMAN DIGITAL WEBAR HOLOGRAM • KAD JEMPUTAN RASMI', 500, 1285);
 
     return canvas;
+  }
+
+  // Export & Download standard A4 Portrait PDF (210mm x 297mm)
+  async downloadCardPDF() {
+    const canvas = await this.generateCardCanvas();
+    const imgData = canvas.toDataURL('image/jpeg', 0.96);
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+      compress: true
+    });
+    // Standard A4 dimensions in mm: 210 x 297
+    pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+    const slug = (this.currentData.coupleName || 'Arif-Fatikhah').replace(/[^a-zA-Z0-9]/g, '_');
+    pdf.save(`Kad-Kahwin-${slug}-A4-Potret.pdf`);
+  }
+
+  // Print as calibrated single-page A4 portrait
+  async printCardA4() {
+    const canvas = await this.generateCardCanvas();
+    let printEl = document.getElementById('a4-printable-card');
+    if (!printEl) {
+      printEl = document.createElement('div');
+      printEl.id = 'a4-printable-card';
+      document.body.appendChild(printEl);
+    }
+    printEl.innerHTML = `<img src="${canvas.toDataURL('image/jpeg', 0.96)}" alt="Kad Kahwin A4 Potret" />`;
+    window.print();
   }
 
   // Render the interactive card preview and printable generator UI
@@ -270,8 +279,11 @@ export class TableCardGenerator {
 
             <!-- Action Buttons Stack -->
             <div class="action-buttons-stack">
+              <button id="btn-download-pdf-generator" class="btn-primary-burgundy" style="background: linear-gradient(135deg, #701a2b 0%, #9f1239 100%); color: white; padding: 14px 20px; font-weight: 700; border-radius: 9999px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 6px 18px rgba(112, 26, 43, 0.35);">
+                📄 Muat Turun Kad PDF (A4 Potret)
+              </button>
               <button id="btn-print-card" class="btn-primary-gold">
-                🖨️ Cetak Kad Jemputan (Print)
+                🖨️ Cetak Kad Jemputan (A4 Print)
               </button>
               <button id="btn-download-card-png" class="btn-gold-outline">
                 📥 Muat Turun Kad (PNG Berdefinisi Tinggi)
@@ -305,14 +317,10 @@ export class TableCardGenerator {
                   <span class="badge-sub">${this.currentData.tableTheme}</span>
                 </div>
 
-                <!-- Couple Photo Display (AR Marker) -->
+                <!-- Couple Photo Display (Clean - No Badge) -->
                 <div class="card-photo-container">
                   <div class="photo-frame-wrapper">
                     <img src="${this.currentData.photoUrl}" alt="Pengantin Arif & Fatikhah" class="card-couple-img" id="preview-couple-img" />
-                    <div class="marker-target-badge">
-                      <span class="pulse-dot"></span>
-                      <span>🧲 SASARAN KAMERA AR MAGNET</span>
-                    </div>
                   </div>
                 </div>
 
@@ -391,8 +399,18 @@ export class TableCardGenerator {
       inp?.addEventListener('input', updatePreview);
     });
 
-    printBtn?.addEventListener('click', () => {
-      window.print();
+    const downloadPdfBtn = document.getElementById('btn-download-pdf-generator');
+    downloadPdfBtn?.addEventListener('click', async () => {
+      downloadPdfBtn.textContent = '⏳ Menjana PDF A4...';
+      try {
+        await this.downloadCardPDF();
+      } finally {
+        downloadPdfBtn.textContent = '📄 Muat Turun Kad PDF (A4 Potret)';
+      }
+    });
+
+    printBtn?.addEventListener('click', async () => {
+      await this.printCardA4();
     });
 
     downloadPngBtn?.addEventListener('click', async () => {

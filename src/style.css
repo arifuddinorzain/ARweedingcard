@@ -1336,67 +1336,7 @@ body.ar-camera-active #ar-guidance {
   border-bottom-right-radius: 8px;
 }
 
-/* Laser Scanning Beam Animation */
-.scan-beam-laser {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, transparent 0%, #d4af37 50%, transparent 100%);
-  box-shadow: 0 0 10px #d4af37, 0 0 20px rgba(212, 175, 55, 0.6);
-  z-index: 2;
-  pointer-events: none;
-  animation: laserScan 2.4s ease-in-out infinite;
-}
-
-@keyframes laserScan {
-  0% {
-    top: 5%;
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-  }
-  85% {
-    opacity: 1;
-  }
-  100% {
-    top: 92%;
-    opacity: 0;
-  }
-}
-
-.step-photo-badge {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(17, 24, 39, 0.88);
-  backdrop-filter: blur(6px);
-  color: #fef08a;
-  border: 1px solid rgba(254, 240, 138, 0.35);
-  border-radius: 9999px;
-  padding: 3px 10px;
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
-  z-index: 3;
-  pointer-events: none;
-}
-
-.badge-dot-live {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #22c55e;
-  box-shadow: 0 0 6px #22c55e;
-  animation: pulseGreen 1.8s infinite;
-}
+/* Clean Photo Target Display - No overlay badge or laser */
 
 .step-reward-pill {
   display: flex;
@@ -1444,6 +1384,72 @@ body.ar-camera-active #ar-guidance {
   border-top: 1px solid rgba(212, 175, 55, 0.35);
   position: relative;
   z-index: 2;
+}
+
+/* PDF Export & Print Row (A4 Portrait) */
+.pdf-export-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-floral-pdf,
+.btn-floral-print {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 9999px;
+  font-family: 'Plus Jakarta Sans', var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+}
+
+.btn-floral-pdf {
+  background: linear-gradient(135deg, #701a2b 0%, #9f1239 50%, #881337 100%);
+  color: #ffffff;
+  border: 1.5px solid #d4af37;
+  box-shadow: 0 4px 14px rgba(112, 26, 43, 0.3), 0 0 10px rgba(212, 175, 55, 0.25);
+}
+
+.btn-floral-pdf:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 22px rgba(112, 26, 43, 0.45), 0 0 15px rgba(212, 175, 55, 0.4);
+  background: linear-gradient(135deg, #831843 0%, #be123c 50%, #9f1239 100%);
+  border-color: #fef08a;
+}
+
+.btn-floral-print {
+  background: rgba(255, 255, 255, 0.95);
+  color: #701a2b;
+  border: 1.5px solid #d4af37;
+  box-shadow: 0 4px 12px rgba(60, 10, 15, 0.1);
+}
+
+.btn-floral-print:hover {
+  transform: translateY(-2px) scale(1.02);
+  background: #fffdfa;
+  border-color: #881337;
+  color: #881337;
+  box-shadow: 0 6px 18px rgba(60, 10, 15, 0.18);
+}
+
+.btn-floral-pdf:active,
+.btn-floral-print:active {
+  transform: translateY(1px);
+}
+
+.btn-pdf-icon {
+  font-size: 16px;
+  line-height: 1;
 }
 
 .footer-links-row {
@@ -2314,31 +2320,71 @@ body.ar-camera-active #ar-guidance {
   margin-top: 4px;
 }
 
-/* Print Rules */
+/* ==========================================================================
+   A4 Portrait Print Specifications (Exact 210mm x 297mm Single-Page Fit)
+   ========================================================================== */
+#a4-printable-card {
+  display: none;
+}
+
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
 @media print {
+  html, body {
+    width: 210mm !important;
+    height: 297mm !important;
+    max-height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    overflow: hidden !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   body * {
-    visibility: hidden;
+    visibility: hidden !important;
   }
-  #card-generator-screen, #printable-tent-card, #printable-tent-card * {
-    visibility: visible;
+
+  /* Single-page calibrated A4 portrait output */
+  #a4-printable-card,
+  #a4-printable-card * {
+    visibility: visible !important;
+    display: block !important;
   }
-  #card-generator-screen {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    padding: 0;
-    background: white;
+
+  #a4-printable-card {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    max-height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    z-index: 99999999 !important;
+    background: #ffffff !important;
   }
-  .card-generator-grid {
-    display: block;
-  }
-  .generator-controls, .panel-header, .top-nav-bar, .mode-tabs-container, .bottom-hud-bar {
-    display: none !important;
-  }
-  .tent-card {
-    max-width: 100% !important;
-    box-shadow: none !important;
-    border: 4px solid #d4af37 !important;
+
+  #a4-printable-card img {
+    width: 210mm !important;
+    height: 297mm !important;
+    max-height: 297mm !important;
+    object-fit: fill !important;
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }
+

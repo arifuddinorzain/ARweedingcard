@@ -502,6 +502,52 @@ btnLandingShowCard?.addEventListener('click', () => {
   setView('table-card');
 });
 
+// A4 Portrait PDF Download & Print Handlers
+const btnExportPdf = document.getElementById('btn-export-pdf');
+btnExportPdf?.addEventListener('click', async () => {
+  const originalHtml = btnExportPdf.innerHTML;
+  btnExportPdf.innerHTML = '<span class="btn-pdf-icon">⏳</span><span>Menjana PDF A4...</span>';
+  try {
+    await cardGen.downloadCardPDF();
+  } catch (err) {
+    console.error('Ralat menjana PDF:', err);
+    alert('Gagal menjana PDF. Sila cuba lagi.');
+  } finally {
+    btnExportPdf.innerHTML = originalHtml;
+  }
+});
+
+const btnPrintCardA4 = document.getElementById('btn-print-card-a4');
+btnPrintCardA4?.addEventListener('click', async () => {
+  const originalHtml = btnPrintCardA4.innerHTML;
+  btnPrintCardA4.innerHTML = '<span class="btn-pdf-icon">⏳</span><span>Menyediakan Cetakan...</span>';
+  try {
+    await cardGen.printCardA4();
+  } catch (err) {
+    console.error('Ralat mencetak:', err);
+  } finally {
+    btnPrintCardA4.innerHTML = originalHtml;
+  }
+});
+
+// Prepare printable card if user triggers browser print shortcut (Ctrl+P)
+window.addEventListener('beforeprint', async () => {
+  let printEl = document.getElementById('a4-printable-card');
+  if (!printEl || !printEl.hasChildNodes()) {
+    try {
+      const canvas = await cardGen.generateCardCanvas();
+      if (!printEl) {
+        printEl = document.createElement('div');
+        printEl.id = 'a4-printable-card';
+        document.body.appendChild(printEl);
+      }
+      printEl.innerHTML = `<img src="${canvas.toDataURL('image/jpeg', 0.96)}" alt="Kad Kahwin A4 Potret" />`;
+    } catch (e) {
+      console.warn('Could not prepare beforeprint image:', e);
+    }
+  }
+});
+
 // -----------------------------------------------------------------------------
 // 9. QR Code Initializer for Stories AR Hero Card
 // -----------------------------------------------------------------------------
