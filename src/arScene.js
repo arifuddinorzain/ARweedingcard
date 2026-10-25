@@ -348,11 +348,12 @@ export class WeddingARScene {
       ctx.font = 'bold 36px serif';
       ctx.fillText(this.coupleName, 350, 140);
 
-      // Base printed photo placeholder on card (3:4 portrait matching pengantin.jpg)
-      const photoW = 270;
-      const photoH = 360; // Exact 3:4 ratio (270 * 4 / 3 = 360)
-      const photoX = (700 - photoW) / 2;
+      // Base printed photo placeholder on card (1:1 square matching pengantin.jpg)
+      const photoSize = 400;
+      const photoX = (700 - photoSize) / 2;
       const photoY = 160;
+      const photoW = photoSize;
+      const photoH = photoSize;
 
       if (img && img.complete) {
         ctx.drawImage(img, photoX, photoY, photoW, photoH);
@@ -433,11 +434,11 @@ export class WeddingARScene {
   // =========================================================================
   buildARMagnetPhoto() {
     this.arMagnetGroup = new THREE.Group();
-    // Centered exactly over the 3:4 portrait photo on the card:
-    this.arMagnetGroup.position.set(0, 0.045, -0.05);
+    // Centered exactly over the 1:1 photo on the card:
+    this.arMagnetGroup.position.set(0, 0.045, -0.069);
 
-    const magnetW = 0.21;
-    const magnetH = 0.28; // Exact 3:4 ratio (0.21 * 4 / 3 = 0.28)
+    const magnetW = 0.24;
+    const magnetH = 0.24;
 
     // 1. Dynamic Magnetic Soft Contact Shadow on Card Surface below
     const shadowCanvas = document.createElement('canvas');
@@ -539,8 +540,8 @@ export class WeddingARScene {
           shiftedUv = clamp(shiftedUv, 0.002, 0.998);
 
           vec4 photoColor = texture2D(uTexture, shiftedUv);
-          // Center-crop 16:9 widescreen video to 3:4 portrait (repeatX = 540/1280 = 0.421875, offsetX = 0.2890625)
-          vec2 videoUv = vec2(shiftedUv.x * 0.421875 + 0.2890625, shiftedUv.y);
+          // Center-crop video to fit 1:1 square without squashing 16:9 ratio
+          vec2 videoUv = vec2((vUv.x - 0.5) * (720.0 / 1280.0) + 0.5, vUv.y);
           vec4 videoColor = texture2D(uVideoTexture, videoUv);
           vec4 texColor = mix(photoColor, videoColor, uBlendProgress);
 
@@ -711,7 +712,7 @@ export class WeddingARScene {
     });
     this.btmPlaque = new THREE.Mesh(btmGeo, btmMat);
     // Floating angled right below the bottom edge of the photo
-    this.btmPlaque.position.set(0, 0.08, 0.12);
+    this.btmPlaque.position.set(0, 0.08, 0.085);
     this.btmPlaque.rotation.x = -Math.PI / 8;
     this.arAnchor.add(this.btmPlaque);
   }
@@ -843,7 +844,7 @@ export class WeddingARScene {
 
       // Smooth cinematic dissolve from photo (0.0) to video (1.0)
       const startTime = performance.now();
-      const dur = 700; // 0.7s smooth dissolve
+      const dur = 1300; // 1.3s smooth dissolve
 
       const fadeIn = (now) => {
         const p = Math.min((now - startTime) / dur, 1.0);

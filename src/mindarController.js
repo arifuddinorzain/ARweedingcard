@@ -306,10 +306,10 @@ export class MindARController {
   fitVideoTextureToPlane() {
     if (!this.livingPlaneEl || !this.videoEl) return;
 
-    // Target portrait image (540x720) has exact aspect ratio 3:4 (0.75).
-    // In MindAR target space, normalized width is 1.0 and height is exactly 720 / 540 = 1.3333.
+    // Target image (1024x1024) is 1:1 square.
+    // In MindAR target space, width is 1.0 and height is 1.0.
     const exactW = '1.0';
-    const exactH = '1.3333';
+    const exactH = '1.0';
 
     // Set identical dimensions and locked Z positions
     this.livingPlaneEl.setAttribute('width', exactW);
@@ -326,15 +326,15 @@ export class MindARController {
       this.borderPlaneEl.setAttribute('visible', 'false');
     }
 
-    // Floating banners float independently with 3D depth above (y = 0.82) and below (y = -0.80) the portrait photo
+    // Floating banners float independently with 3D depth above (y = 0.65) and below (y = -0.65) the square photo
     if (this.bannerPlaneEl) {
-      this.bannerPlaneEl.setAttribute('position', '0 0.82 0.02');
+      this.bannerPlaneEl.setAttribute('position', '0 0.65 0.02');
     }
     if (this.namesPlaneEl) {
-      this.namesPlaneEl.setAttribute('position', '0 -0.80 0.02');
+      this.namesPlaneEl.setAttribute('position', '0 -0.65 0.02');
     }
 
-    // Map still photo (540x720) 100% edge-to-edge
+    // Map still photo (1024x1024) 100% edge-to-edge
     if (this.stillPlaneEl) {
       const stillMesh = this.stillPlaneEl.getObject3D('mesh');
       if (stillMesh && stillMesh.material && stillMesh.material.map) {
@@ -346,14 +346,14 @@ export class MindARController {
       }
     }
 
-    // Map video (1280x720) center-cropped horizontally to 3:4 (540x720) so it matches the photo pixel-for-pixel
-    // repeatX = 540 / 1280 = 0.421875, offsetX = (1.0 - 0.421875) / 2 = 0.2890625
+    // Map video (1280x720) center-cropped horizontally to 1:1 square (720x720)
+    // repeatX = 720 / 1280 = 0.5625, offsetX = (1.0 - 0.5625) / 2 = 0.21875
     if (this.livingPlaneEl) {
       const videoMesh = this.livingPlaneEl.getObject3D('mesh');
       if (videoMesh && videoMesh.material && videoMesh.material.map) {
         const map = videoMesh.material.map;
-        map.repeat.set(0.421875, 1.0);
-        map.offset.set(0.2890625, 0.0);
+        map.repeat.set(0.5625, 1.0);
+        map.offset.set(0.21875, 0.0);
         map.updateMatrix();
         map.needsUpdate = true;
       }

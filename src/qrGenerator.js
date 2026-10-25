@@ -143,16 +143,17 @@ export class TableCardGenerator {
       photoImg.onerror = resolve;
     });
 
-    const photoW = 345;
-    const photoH = 460; // Exact 3:4 portrait ratio (345 * 4 / 3 = 460)
-    const photoX = (1000 - photoW) / 2;
+    const photoSize = 440;
+    const photoX = (1000 - photoSize) / 2;
     const photoY = 270;
+    const photoW = photoSize;
+    const photoH = photoSize;
 
     // Photo shadow
     ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
     ctx.fillRect(photoX + 8, photoY + 8, photoW, photoH);
 
-    // Draw Couple Photo (Clean 3:4 Target)
+    // Draw Couple Photo (Clean)
     if (photoImg.complete && photoImg.naturalWidth > 0) {
       ctx.drawImage(photoImg, photoX, photoY, photoW, photoH);
     } else {
@@ -170,27 +171,27 @@ export class TableCardGenerator {
 
     // 4. Instruction Banner (Pill badge)
     const bannerW = 720;
-    const bannerH = 38;
+    const bannerH = 40;
     const bannerX = (1000 - bannerW) / 2;
-    const bannerY = 746;
+    const bannerY = 728;
 
     ctx.save();
     ctx.fillStyle = 'rgba(255, 252, 246, 0.94)';
     ctx.shadowColor = 'rgba(60, 10, 15, 0.12)';
     ctx.shadowBlur = 10;
     ctx.shadowOffsetY = 3;
-    this.drawRoundedRect(ctx, bannerX, bannerY, bannerW, bannerH, 19);
+    this.drawRoundedRect(ctx, bannerX, bannerY, bannerW, bannerH, 20);
     ctx.fill();
     ctx.restore();
 
     ctx.strokeStyle = '#d4af37';
     ctx.lineWidth = 1.8;
-    this.drawRoundedRect(ctx, bannerX, bannerY, bannerW, bannerH, 19);
+    this.drawRoundedRect(ctx, bannerX, bannerY, bannerW, bannerH, 20);
     ctx.stroke();
 
     ctx.fillStyle = '#8c6d12';
     ctx.font = 'bold 13px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('▼ IMBAS KOD QR DI BAWAH & HALAKAN KAMERA KE FOTO DI ATAS ▼', 500, bannerY + 24, 660);
+    ctx.fillText('▼ IMBAS KOD QR DI BAWAH & HALAKAN KAMERA KE FOTO DI ATAS ▼', 500, bannerY + 25, 660);
 
     // 5. QR Code Section
     const qrDataUrl = await this.getQRCodeDataUrl();
@@ -201,9 +202,9 @@ export class TableCardGenerator {
       qrImg.onerror = resolve;
     });
 
-    const qrSize = 210;
+    const qrSize = 220;
     const qrX = (1000 - qrSize) / 2;
-    const qrY = 802;
+    const qrY = 788;
 
     // QR container box with shadow & gold border
     ctx.save();
@@ -226,10 +227,10 @@ export class TableCardGenerator {
 
     // 6. Step-by-Step Instructions & Event Details Plaque
     // (Solid Ivory Parchment Plaque that completely protects text from overlapping floral background)
-    const plaqueW = 700;
-    const plaqueH = 320;
+    const plaqueW = 680;
+    const plaqueH = 325;
     const plaqueX = (1000 - plaqueW) / 2;
-    const plaqueY = 1032;
+    const plaqueY = 1045;
 
     ctx.save();
     ctx.shadowColor = 'rgba(40, 5, 10, 0.22)';

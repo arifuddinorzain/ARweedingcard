@@ -39,39 +39,39 @@
 
           <!-- Image Target 0: Couple Photo (Brings static photo alive into moving picture!) -->
           <a-entity id="mindar-target" mindar-image-target="targetIndex: 0">
-            <!-- 1. Still Photo Layer (Matches physical card photo 100%, exact 3:4 portrait ratio 1.0 x 1.3333) -->
+            <!-- 1. Still Photo Layer (Matches physical card photo 100%, exact 1:1 square ratio 1.0 x 1.0) -->
             <a-plane
               id="ar-still-photo-plane"
               position="0 0 0.001"
-              height="1.3333"
+              height="1.0"
               width="1.0"
               material="src: #card-photo-target; shader: flat; transparent: true; opacity: 1.0;"
               visible="true"
             ></a-plane>
 
-            <!-- 2. Video Layer (Exact same 3:4 portrait dimensions 1.0 x 1.3333, fits photo seamlessly edge-to-edge) -->
+            <!-- 2. Video Layer (Exact same 1:1 square dimensions 1.0 x 1.0, fits photo seamlessly edge-to-edge) -->
             <a-plane
               id="ar-living-plane"
               position="0 0 0.002"
-              height="1.3333"
+              height="1.0"
               width="1.0"
               material="src: #custom-wedding-video; shader: flat; transparent: true; opacity: 0.0;"
               visible="true"
               ar-video-sync
             ></a-plane>
 
-            <!-- 3. Floating 3D Greeting Banner (Floats independently above the portrait video) -->
+            <!-- 3. Floating 3D Greeting Banner (Floats independently above the square video) -->
             <a-plane
               id="ar-floating-banner"
-              position="0 0.82 0.02"
+              position="0 0.65 0.02"
               height="0.16"
               width="0.95"
             ></a-plane>
 
-            <!-- 4. Floating Names Plaque (Floats independently below the portrait video) -->
+            <!-- 4. Floating Names Plaque (Floats independently below the square video) -->
             <a-plane
               id="ar-floating-names"
-              position="0 -0.80 0.02"
+              position="0 -0.65 0.02"
               height="0.14"
               width="0.80"
             ></a-plane>
